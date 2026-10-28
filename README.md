@@ -31,7 +31,9 @@
 3. Проведение регулярных повторных сканирований (Continuous Red Teaming).
 
 ## 📸 Доказательства (Screenshots)
-*Скриншоты процесса сканирования и отчетов Garak находятся в папке `screenshots`.*
+*Скриншоты процесса сканирования и отчетов Garak находятся в папке `screenshots`.*:
+![Garak HTML](screenshots/garak_html_report)
+![Garak VSCode](garak_vscode_terminal.jpg.jpg)
 
 ## 🛡 Внедрение защиты (Defense / Blue Team)
 
@@ -43,6 +45,7 @@
 *   Вредоносные запросы, содержащие инъекции (например, "Игнорируй инструкции..."), блокируются (Risk Score: 1.0) и не отправляются в модель.
 
 *Код защитного механизма находится в файле `guard_test.py`. Скриншот работы прилагается в папке `screenshots`.*
+![guard_test.py](screenshots/guard_test_result.png)
 
 ### Архитектура безопасности (Secure Gateway)
 Был реализован шлюз безопасности (аналог WAF), который выступает посредником между пользователем и LLM (Ollama/phi3).
