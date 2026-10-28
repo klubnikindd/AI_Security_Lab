@@ -67,6 +67,7 @@ graph TD
     style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style F fill:#d4edda,stroke:#28a745,stroke-width:2px
     style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+```
 
 *Код шлюза находится в файле `secure_gateway.py`.*
 
