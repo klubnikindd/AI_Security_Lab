@@ -54,3 +54,6 @@
 4. Если запрос содержит Prompt Injection, он блокируется до попадания в модель.
 
 *Код шлюза находится в файле `secure_gateway.py`.*
+
+**Результат работы шлюза (скриншот):**
+![Тест Secure Gateway](screenshots/secure_gateway_test.png)
