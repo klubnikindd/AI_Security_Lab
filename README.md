@@ -47,11 +47,26 @@
 ### Архитектура безопасности (Secure Gateway)
 Был реализован шлюз безопасности (аналог WAF), который выступает посредником между пользователем и LLM (Ollama/phi3).
 
-**Схема работы:**
+**Описание работы:**
 1. Пользователь отправляет запрос в скрипт `secure_gateway.py`.
 2. Скрипт анализирует входные данные через `LLM Guard` (DeBERTa v3).
 3. Если запрос безопасен (Risk Score < 1.0), он перенаправляется в API Ollama.
 4. Если запрос содержит Prompt Injection, он блокируется до попадания в модель.
+
+### Схема работы Secure Gateway
+
+```mermaid
+graph TD
+    A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
+    B --> C{🤖 LLM Guard<br/>Модель DeBERTa}
+    C -->|Угроза обнаружена<br/>Risk = 1.0| D[🚫 Блокировка запроса]
+    C -->|Запрос безопасен<br/>Risk = -1.0| E[🌐 API Запрос]
+    E -->|HTTP POST| F[🦙 Ollama / phi3]
+    F -->|Сгенерированный ответ| B
+    B -->|Ответ| A
+    style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style F fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
 
 *Код шлюза находится в файле `secure_gateway.py`.*
 
