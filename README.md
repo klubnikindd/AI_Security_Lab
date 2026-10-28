@@ -32,8 +32,8 @@
 
 ## 📸 Доказательства (Screenshots)
 *Скриншоты процесса сканирования и отчетов Garak находятся в папке `screenshots`.*:
-![Garak HTML](screenshots/garak_html_report)
-![Garak VSCode](garak_vscode_terminal.jpg.jpg)
+![Garak HTML](screenshots/garak_html_report.jpg)
+![Garak VSCode](screenshots/garak_vscode_terminal.jpg)
 
 ## 🛡 Внедрение защиты (Defense / Blue Team)
 
