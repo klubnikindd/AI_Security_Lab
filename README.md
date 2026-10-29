@@ -56,7 +56,7 @@
 3. Если запрос безопасен (Risk Score < 1.0), он перенаправляется в API Ollama.
 4. Если запрос содержит Prompt Injection, он блокируется до попадания в модель.
 
-### Схема работы Secure Gateway
+### Схема работы Secure Gateway (версия ONE)
 
 ```mermaid
 graph TD
@@ -76,3 +76,40 @@ graph TD
 
 **Результат работы шлюза (скриншот):**
 ![Тест Secure Gateway](screenshots/secure_gateway_test.png)
+
+### 🛡️ Многоуровневая защита (Defense-in-Depth)
+
+В финальной версии `secure_gateway.py` реализованы 4 слоя защиты:
+1. **Rate Limiting:** Ограничение до 3 запросов в минуту (защита от ботов и перебора).
+2. **Input Guardrails:** Сканер `PromptInjection` (модель DeBERTa) блокирует вредоносные промпты.
+3. **API Ollama:** Отправка безопасных запросов к модели `phi3`.
+4. **Output Guardrails:** Сканер `Sensitive` проверяет ответ модели на наличие PII (персональных данных), паролей и ключей, прежде чем вернуть его пользователю.
+
+## 🛡️ Эволюция защиты: Secure Gateway (WAF для LLM)
+
+В ходе проекта было создано две версии защитного шлюза (Web Application Firewall), чтобы продемонстрировать эволюцию подхода от базовой фильтрации до эшелонированной обороны (Defense-in-Depth).
+
+### Версия 1: Базовая защита (Input Guardrail)
+*Файл: `secure_gateway_one.py`*
+
+В первой версии был реализован базовый паттерн «КПП». Шлюз проверяет входящий промпт через нейросеть-классификатор и, если запрос безопасен, передает его в Ollama.
+
+```mermaid
+graph TD
+    A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
+    B --> C{🤖 LLM Guard<br/>Модель DeBERTa}
+    C -->|Угроза обнаружена<br/>Risk = 1.0| D[🚫 Блокировка запроса]
+    C -->|Запрос безопасен<br/>Risk = -1.0| E[🌐 API Запрос]
+    E -->|HTTP POST| F[🦙 Ollama / phi3]
+    F -->|Сгенерированный ответ| B
+    B -->|Ответ| A
+    style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style F fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+```
+
+**Результат тестирования 4 слоев:**
+![Secure Gateway Layers](screenshots/secure_gateway_layers1.png)
+![Secure Gateway Layers](screenshots/secure_gateway_layers2.png)
+![Secure Gateway Layers](screenshots/secure_gateway_layers3.png)
+![Secure Gateway Layers](screenshots/secure_gateway_layers4.png)
