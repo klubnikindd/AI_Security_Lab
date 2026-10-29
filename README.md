@@ -56,7 +56,7 @@
 В первой версии был реализован базовый паттерн «КПП». Шлюз проверяет входящий промпт через нейросеть-классификатор и, если запрос безопасен, передает его в Ollama.
 
 **Описание работы:**
-1. Пользователь отправляет запрос в скрипт `secure_gateway.py`.
+1. Пользователь отправляет запрос в скрипт `secure_gateway_one.py`.
 2. Скрипт анализирует входные данные через `LLM Guard` (DeBERTa v3).
 3. Если запрос безопасен (Risk Score < 1.0), он перенаправляется в API Ollama.
 4. Если запрос содержит Prompt Injection, он блокируется до попадания в модель.
@@ -77,7 +77,7 @@ graph TD
     style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
 ```
 
-*Код шлюза находится в файле `secure_gateway.py`.*
+*Код шлюза находится в файле `secure_gateway_one.py`.*
 
 **Результат работы шлюза (скриншот):**
 ![Тест Secure Gateway](screenshots/secure_gateway_test.png)
@@ -98,15 +98,15 @@ graph TD
 graph TD
     A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
     
-    B --> L1{⏱️ Слой 1: Rate Limiting<br/>Лимит: 3 запроса/мин}
+    B --> L1{"⏱️ Слой 1: Rate Limiting<br/>Лимит 3 запроса/мин"}
     L1 -->|Превышен лимит| Block1[🛑 Блокировка: Слишком много запросов]
     
-    L1 -->|Лимит не превышен| L2{🤖 Слой 2: Input Guardrail<br/>LLM Guard (PromptInjection)}
+    L1 -->|Лимит не превышен| L2{"🤖 Слой 2: Input Guardrail<br/>LLM Guard PromptInjection"}
     L2 -->|Обнаружена атака<br/>Risk = 1.0| Block2[🚫 Блокировка: Prompt Injection]
     
     L2 -->|Запрос безопасен<br/>Risk = -1.0| L3[🦙 Слой 3: Ollama API<br/>Генерация ответа]
     
-    L3 -->|Сырой ответ модели| L4{🕵️ Слой 4: Output Guardrail<br/>LLM Guard (Sensitive)}
+    L3 -->|Сырой ответ модели| L4{"🕵️ Слой 4: Output Guardrail<br/>LLM Guard Sensitive"}
     
     L4 -->|Найдены PII/Секреты| Block3[🚫 Блокировка: Утечка данных<br/>Ответ скрыт]
     
