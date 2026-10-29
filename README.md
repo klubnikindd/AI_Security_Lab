@@ -50,6 +50,11 @@
 ### Архитектура безопасности (Secure Gateway)
 Был реализован шлюз безопасности (аналог WAF), который выступает посредником между пользователем и LLM (Ollama/phi3).
 
+### Версия 1: Базовая защита (Input Guardrail)
+*Файл: `secure_gateway_one.py`*
+
+В первой версии был реализован базовый паттерн «КПП». Шлюз проверяет входящий промпт через нейросеть-классификатор и, если запрос безопасен, передает его в Ollama.
+
 **Описание работы:**
 1. Пользователь отправляет запрос в скрипт `secure_gateway.py`.
 2. Скрипт анализирует входные данные через `LLM Guard` (DeBERTa v3).
@@ -77,6 +82,10 @@ graph TD
 **Результат работы шлюза (скриншот):**
 ![Тест Secure Gateway](screenshots/secure_gateway_test.png)
 
+## 🛡️ Эволюция защиты: Secure Gateway (WAF для LLM)
+
+В ходе проекта было создано две версии защитного шлюза (Web Application Firewall), чтобы продемонстрировать эволюцию подхода от базовой фильтрации до эшелонированной обороны (Defense-in-Depth).
+
 ### 🛡️ Многоуровневая защита (Defense-in-Depth)
 
 В финальной версии `secure_gateway.py` реализованы 4 слоя защиты:
@@ -85,27 +94,35 @@ graph TD
 3. **API Ollama:** Отправка безопасных запросов к модели `phi3`.
 4. **Output Guardrails:** Сканер `Sensitive` проверяет ответ модели на наличие PII (персональных данных), паролей и ключей, прежде чем вернуть его пользователю.
 
-## 🛡️ Эволюция защиты: Secure Gateway (WAF для LLM)
-
-В ходе проекта было создано две версии защитного шлюза (Web Application Firewall), чтобы продемонстрировать эволюцию подхода от базовой фильтрации до эшелонированной обороны (Defense-in-Depth).
-
-### Версия 1: Базовая защита (Input Guardrail)
-*Файл: `secure_gateway_one.py`*
-
-В первой версии был реализован базовый паттерн «КПП». Шлюз проверяет входящий промпт через нейросеть-классификатор и, если запрос безопасен, передает его в Ollama.
-
 ```mermaid
 graph TD
     A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
-    B --> C{🤖 LLM Guard<br/>Модель DeBERTa}
-    C -->|Угроза обнаружена<br/>Risk = 1.0| D[🚫 Блокировка запроса]
-    C -->|Запрос безопасен<br/>Risk = -1.0| E[🌐 API Запрос]
-    E -->|HTTP POST| F[🦙 Ollama / phi3]
-    F -->|Сгенерированный ответ| B
-    B -->|Ответ| A
-    style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
-    style F fill:#d4edda,stroke:#28a745,stroke-width:2px
-    style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+    
+    B --> L1{⏱️ Слой 1: Rate Limiting<br/>Лимит: 3 запроса/мин}
+    L1 -->|Превышен лимит| Block1[🛑 Блокировка: Слишком много запросов]
+    
+    L1 -->|Лимит не превышен| L2{🤖 Слой 2: Input Guardrail<br/>LLM Guard (PromptInjection)}
+    L2 -->|Обнаружена атака<br/>Risk = 1.0| Block2[🚫 Блокировка: Prompt Injection]
+    
+    L2 -->|Запрос безопасен<br/>Risk = -1.0| L3[🦙 Слой 3: Ollama API<br/>Генерация ответа]
+    
+    L3 -->|Сырой ответ модели| L4{🕵️ Слой 4: Output Guardrail<br/>LLM Guard (Sensitive)}
+    
+    L4 -->|Найдены PII/Секреты| Block3[🚫 Блокировка: Утечка данных<br/>Ответ скрыт]
+    
+    L4 -->|Ответ чист| F[✅ Возврат ответа пользователю]
+    Block1 -.-> F
+    Block2 -.-> F
+    Block3 -.-> F
+
+    style Block1 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style Block2 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style Block3 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style L3 fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style L1 fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+    style L2 fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+    style L4 fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+    style F fill:#cce5ff,stroke:#004085,stroke-width:2px
 ```
 
 **Результат тестирования 4 слоев:**
