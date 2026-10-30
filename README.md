@@ -94,6 +94,7 @@ graph TD
 3. **API Ollama:** Отправка безопасных запросов к модели `phi3`.
 4. **Output Guardrails:** Сканер `Sensitive` проверяет ответ модели на наличие PII (персональных данных), паролей и ключей, прежде чем вернуть его пользователю.
 
+### Схема работы Secure Gateway (финальная версия) 
 ```mermaid
 graph TD
     A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
@@ -130,3 +131,65 @@ graph TD
 ![Secure Gateway Layers](screenshots/secure_gateway_layers2.png)
 ![Secure Gateway Layers](screenshots/secure_gateway_layers3.png)
 ![Secure Gateway Layers](screenshots/secure_gateway_layers4.png)
+
+### 🔬 Исследование AI-агентов (Excessive Agency)
+Был проведен эксперимент по имитации атаки на AI-агента с доступом к файловой системе.
+*   **Уязвимая версия (`vulnerable_agent.py`):** Демонстрирует, как Prompt Injection может заставить агента прочитать файл с паролями (LLM03: Excessive Agency).
+
+Note: При тестировании также наблюдался эффект Context Leakage (модель генерировала вымышленные реплики пользователя), что характерно для малых моделей при сложных системных промптах.
+
+### Схема работы уязвимой версии (`vulnerable_agent.py`) 
+```mermaid
+graph TD
+    A[👤 Пользователь] -->|Вредоносный промпт| B(🛡️ vulnerable_agent.py)
+    B -->|1. Добавляет System Prompt| C[🦙 Ollama API<br/>Модель phi3]
+    
+    C -->|2. Модель анализирует текст| C_Out{Ответ модели}
+    
+    C_Out -->|Атака удалась: модель выдала<br/>текст [secret_passwords.txt]| D{Парсер ищет [ ]}
+    C_Out -->|Модель отказала| E[Агент ничего не делает]
+    
+    D -->|3. Найдено имя файла| F[⚙️ Вызов инструмента<br/>read_file]
+    
+    F -->|4. Нет проверок!| G[(💾 Файловая система)]
+    G -->|Чтение secret_passwords.txt| H[📄 Вывод пароля пользователю]
+    
+    style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style F fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style H fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+```
+*   **Защищенная версия (`secure_agent.py`):** Реализован принцип наименьших привилегий (Least Privilege). Доступ к файлам ограничен жестким списком `ALLOWED_FILES` на уровне Python-кода, а не только системным промптом.
+### Схема работы защищенной версии (`secure_agent.py`) 
+```mermaid
+graph TD
+    A[👤 Пользователь] -->|Вредоносный промпт| B(🛡️ secure_agent.py)
+    B -->|1. Добавляет System Prompt| C[🦙 Ollama API<br/>Модель phi3]
+    
+    C -->|2. Модель анализирует текст| C_Out{Ответ модели}
+    
+    C_Out -->|Атака удалась: модель выдала<br/>текст [secret_passwords.txt]| D{Парсер ищет [ ]}
+    C_Out -->|Модель отказала| E[Агент ничего не делает]
+    
+    D -->|3. Найдено имя файла| F{Проверка ALLOWED_FILES}
+    
+    F -->|Файл НЕ в белом списке| Block[🚫 Блокировка:<br/>Доступ запрещен политикой безопасности]
+    F -->|Файл в белом списке| G[⚙️ Вызов инструмента<br/>read_file]
+    
+    G -->|4. Чтение public_info.txt| H[(💾 Файловая система)]
+    H -->|Успех| I[📄 Вывод данных пользователю]
+    
+    style F fill:#fff3cd,stroke:#ffc107,stroke-width:2px
+    style Block fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style G fill:#d4edda,stroke:#28a745,stroke-width:2px
+    style I fill:#d4edda,stroke:#28a745,stroke-width:2px
+```
+
+📸 Доказательства работы (Screenshots)
+Скриншоты выполнения обоих скриптов в терминале VS Code.
+
+1. Уязвимый агент (успешная атака и чтение секрета):
+https://screenshots/vulnerable_agent_result1.png
+https://screenshots/vulnerable_agent_result2.png
+
+2. Защищенный агент (блокировка атаки на уровне кода):
+https://screenshots/secure_agent_result.png
