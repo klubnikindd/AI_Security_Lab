@@ -190,8 +190,8 @@ graph TD
 Скриншоты выполнения обоих скриптов в терминале VS Code.
 
 1. Уязвимый агент (успешная атака и чтение секрета):
-https://screenshots/vulnerable_agent_result1.png
-https://screenshots/vulnerable_agent_result2.png
+![Secure Gateway Layers](screenshots/vulnerable_agent_result1.png)
+![Secure Gateway Layers](screenshots/vulnerable_agent_result2.png)
 
 2. Защищенный агент (блокировка атаки на уровне кода):
-https://screenshots/secure_agent_result.png
+![Secure Gateway Layers](screenshots/secure_agent_result.png)
