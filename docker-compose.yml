@@ -1,0 +1,20 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_server
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama # Сохраняем модели, чтобы не скачивать их каждый раз
+    
+  gateway:
+    build: .
+    container_name: secure_gateway
+    environment:
+      - OLLAMA_HOST=http://ollama:11434 # Указываем адрес контейнера Ollama
+      - HF_HUB_DISABLE_XET=1 # Отключаем проблемный сервер
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:

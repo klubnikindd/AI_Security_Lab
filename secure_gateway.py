@@ -1,3 +1,4 @@
+import os
 import requests
 import time
 from llm_guard.input_scanners import PromptInjection
@@ -42,34 +43,49 @@ def secure_chat(prompt):
     print(f"✅ [Шлюз безопасности]: Запрос безопасен. Пересылка в Ollama...")
     
     # --- СЛОЙ 3: ОТПРАВКА В OLLAMA ---
-    url = "http://localhost:11434/api/generate"
+    # Берем адрес из переменной окружения, если ее нет — используем localhost
+        # --- СЛОЙ 3: ОТПРАВКА В OLLAMA ---
+    OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    url = f"{OLLAMA_HOST}/api/generate"
+
     payload = {
         "model": "phi3",
         "prompt": sanitized_prompt,
         "stream": False
     }
     
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-        result = response.json()
-        raw_response = result['response'].strip()
-        
-        # --- СЛОЙ 4: OUTPUT GUARDRAIL ---
-        # Проверяем, что модель не выдала секреты
-        sanitized_output, is_valid_out, risk_score_out = out_scanner.scan(prompt, raw_response)
-        
-        if not is_valid_out:
-            print("🚨 [Шлюз безопасности]: В ОТВЕТЕ МОДЕЛИ ОБНАРУЖЕНЫ КОНФИДЕНЦИАЛЬНЫЕ ДАННЫЕ! Ответ заблокирован.")
-            print(f"   (Уровень риска: {risk_score_out})")
-            print(f"   [Заблокированный ответ]: {raw_response}")
-        else:
-            print(f"🤖 [phi3]: {raw_response}")
+    # --- МЕХАНИЗМ ПОВТОРНЫХ ПОПЫТОК (RETRY) ---
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, json=payload, timeout=120)
+            # Если Ollama вернул 404, ждем и пробуем снова
+            if response.status_code == 404:
+                print(f"⚠️ Ollama еще не готова (попытка {attempt + 1}/{max_retries})...")
+                time.sleep(3) # Ждем 3 секунды
+                continue
             
-    except requests.exceptions.ConnectionError:
-        print("❌ Ошибка: Не удалось подключиться к Ollama.")
-    except Exception as e:
-        print(f"❌ Произошла ошибка: {e}")
+            response.raise_for_status()
+            result = response.json()
+            raw_response = result['response'].strip()
+            
+            # --- СЛОЙ 4: OUTPUT GUARDRAIL ---
+            sanitized_output, is_valid_out, risk_score_out = out_scanner.scan(prompt, raw_response)
+            
+            if not is_valid_out:
+                print("🚨 [Шлюз безопасности]: В ОТВЕТЕ МОДЕЛИ ОБНАРУЖЕНЫ КОНФИДЕНЦИАЛЬНЫЕ ДАННЫЕ! Ответ заблокирован.")
+                print(f"   (Уровень риска: {risk_score_out})")
+                print(f"   [Заблокированный ответ]: {raw_response}")
+            else:
+                print(f"🤖 [phi3]: {raw_response}")
+            break # Успех! Выходим из цикла
+            
+        except requests.exceptions.ConnectionError:
+            print(f"⚠️ Нет связи с Ollama (попытка {attempt + 1}/{max_retries})...")
+            time.sleep(3)
+        except Exception as e:
+            print(f"❌ Произошла ошибка: {e}")
+            break # При других ошибках выходим
         
     print("-" * 50)
 

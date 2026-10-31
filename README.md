@@ -7,6 +7,7 @@
 4. [Этап 2: Базовая защита (Blue Team)](#-этап-2-базовая-защита-blue-team)
 5. [Этап 3: Эшелонированная оборона (Secure Gateway)](#-этап-3-эшелонированная-оборона-secure-gateway)
 6. [Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
+7. [Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
 
 
 ---
@@ -171,3 +172,74 @@ graph TD
 
 **Доказательства (Скриншот защищенного агента):**
 ![Secure Agent](screenshots/secure_agent_result.png)
+
+## 🐳 Этап 5: Контейнеризация (Docker)
+Для обеспечения воспроизводимости, изоляции и простоты развертывания проект полностью упакован в Docker. Вся система (Шлюз безопасности + LLM) разворачивается одной командой.
+
+### Архитектура Docker-развертывания
+Проект состоит из двух контейнеров, объединенных в единую внутреннюю сеть ai_security_lab_default:
+
+#### 1. gateway: Python-приложение с реализованными слоями защиты (Rate Limiting, Input/Output Guardrails).
+
+#### 2. ollama_server: Сервер Ollama с моделью phi3.
+
+#### 4. ollama_data: Docker Volume для кэширования скачанных моделей (чтобы не качать их при каждом перезапуске).
+
+```mermaid
+graph TD
+    subgraph Host["🖥️ Хост-машина (Windows 11 + WSL 2)"]
+        User[👤 Пользователь]
+        Terminal[⌨️ Терминал / VS Code]
+    end
+
+    subgraph DockerNet["🐳 Docker Network (ai_security_lab_default)"]
+        
+        subgraph Gateway["🛡️ Контейнер: secure_gateway (Python)"]
+            L1{"⏱️ Слой 1: Rate Limiter"}
+            L2{"🤖 Слой 2: Input Guard<br/>(LLM Guard)"}
+            L3{"🕵️ Слой 4: Output Guard<br/>(LLM Guard)"}
+        end
+        
+        subgraph Ollama["🦙 Контейнер: ollama_server"]
+            LLM["Модель phi3<br/>(на CPU)"]
+        end
+        
+        Volume[("💾 Volume: ollama_data<br/>(Кэш моделей)")]
+    end
+
+    User --> Terminal
+    Terminal -->|"1. Запуск скрипта"| Gateway
+    Gateway -->|"2. Входящий промпт"| L1
+    L1 -->|"Лимит ОК"| L2
+    L2 -->|"Промпт безопасен"| L3
+    L3 -.->|"3. HTTP POST<br/>(http://ollama:11434)"| Ollama
+    Ollama -->|"4. Ответ модели"| L3
+    L3 -->|"5. Проверка на PII"| Terminal
+    
+    L1 -->|"Блок: Слишком много запросов"| Terminal
+    L2 -->|"Блок: Prompt Injection"| Terminal
+    L3 -->|"Блок: Утечка данных"| Terminal
+    
+    Ollama --- Volume
+    
+    style Gateway fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+    style Ollama fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Volume fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style L1 fill:#fff9c4,stroke:#fbc02d
+    style L2 fill:#fff9c4,stroke:#fbc02d
+    style L3 fill:#fff9c4,stroke:#fbc02d
+```
+
+### 🚀 Как запустить
+Для запуска всей инфраструктуры достаточно выполнить:
+
+bash
+# Запуск контейнеров в фоне (сборка образа gateway и запуск ollama)
+docker compose up -d --build
+
+# Запуск тестового скрипта внутри контейнера gateway
+docker compose run --rm gateway python secure_gateway.py
+
+**Доказательства (Скриншот результат работы в Docker):**
+![Docker Run](screenshots/docker_run1.png)
+![Docker Run](screenshots/docker_run2.png)
