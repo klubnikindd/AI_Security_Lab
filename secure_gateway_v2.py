@@ -50,7 +50,7 @@ def secure_chat(prompt):
     }
     
     try:
-        response = requests.post(url, json=payload)
+        response = requests.post(url, json=payload, timeout=120)
         response.raise_for_status()
         result = response.json()
         raw_response = result['response'].strip()

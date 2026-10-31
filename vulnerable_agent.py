@@ -24,7 +24,7 @@ def ask_agent(user_input):
     # Отправляем запрос в Ollama (используем phi3)
     full_prompt = f"{system_prompt}\n\nПользователь: {user_input}"
     payload = {"model": "phi3", "prompt": full_prompt, "stream": False}
-    response = requests.post("http://localhost:11434/api/generate", json=payload)
+    response = requests.post("http://localhost:11434/api/generate", json=payload, timeout=120)
     llm_reply = response.json()['response'].strip()
     
     print(f"🤖 [Агент думает]: {llm_reply}")
