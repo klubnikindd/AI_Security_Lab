@@ -177,13 +177,10 @@ graph TD
 Для обеспечения воспроизводимости, изоляции и простоты развертывания проект полностью упакован в Docker. Вся система (Шлюз безопасности + LLM) разворачивается одной командой.
 
 ### Архитектура Docker-развертывания
-Проект состоит из двух контейнеров, объединенных в единую внутреннюю сеть ai_security_lab_default:
-
-#### 1. gateway: Python-приложение с реализованными слоями защиты (Rate Limiting, Input/Output Guardrails).
-
-#### 2. ollama_server: Сервер Ollama с моделью phi3.
-
-#### 4. ollama_data: Docker Volume для кэширования скачанных моделей (чтобы не качать их при каждом перезапуске).
+Проект состоит из двух контейнеров, объединенных в единую внутреннюю сеть `ai_security_lab_default`:
+1. **`gateway`**: Python-приложение с реализованными слоями защиты (Rate Limiting, Input/Output Guardrails).
+2. **`ollama_server`**: Сервер Ollama с моделью `phi3`.
+3. **`ollama_data`**: Docker Volume для кэширования скачанных моделей (чтобы не качать их при каждом перезапуске).
 
 ```mermaid
 graph TD
@@ -233,12 +230,16 @@ graph TD
 ### 🚀 Как запустить
 Для запуска всей инфраструктуры достаточно выполнить:
 
-bash
+```bash
 # Запуск контейнеров в фоне (сборка образа gateway и запуск ollama)
 docker compose up -d --build
 
 # Запуск тестового скрипта внутри контейнера gateway
 docker compose run --rm gateway python secure_gateway.py
+
+# Остановка и удаление контейнеров после работы
+docker compose down
+```
 
 **Доказательства (Скриншот результат работы в Docker):**
 ![Docker Run](screenshots/docker_run1.png)
