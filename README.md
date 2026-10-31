@@ -1,5 +1,7 @@
 # LLM Security Assessment: Prompt Injection Testing (Ollama + phi3)
 
+![Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)
+
 ## 📑 Оглавление
 1. [Обзор проекта](#-обзор-проекта)
 2. [Стек и инструменты](#-стек-и-инструменты)
