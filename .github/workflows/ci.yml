@@ -34,7 +34,7 @@ jobs:
         run: bandit -r . -x ./.venv*,./test_*.py -f screen
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
-        continue-on-error: true  # <--- ВОТ ЭТО
+        continue-on-error: true  
         run: pip-audit -r requirements.txt
 
   container-scan:
