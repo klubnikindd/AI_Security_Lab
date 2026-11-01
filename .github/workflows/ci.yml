@@ -30,7 +30,8 @@ jobs:
         run: pytest test_security.py -v
 
       - name: 5. SAST - Поиск уязвимостей в коде (Bandit)
-        run: bandit -r . -x ./.venv* -f screen
+      # Исключаем тестовые файлы (test_*), так как использование assert в тестах безопасно
+        run: bandit -r . -x ./.venv*,./test_*.py -f screen
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
         continue-on-error: true  # <--- ВОТ ЭТО
