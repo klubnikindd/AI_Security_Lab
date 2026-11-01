@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# НОВЫЙ БЛОК: Ограничиваем права токена только чтением
+# Ограничиваем права токена (Принцип наименьших привилегий)
 permissions:
   contents: read
 
@@ -27,18 +27,17 @@ jobs:
       - name: 3. Установка инструментов безопасности
         run: |
           python -m pip install --upgrade pip
-          pip install bandit pip-audit
+          pip install bandit pip-audit pytest
           pip install -r requirements.txt
 
       - name: 4. Запуск Unit-тестов (pytest)
         run: pytest test_security.py -v
 
       - name: 5. SAST - Поиск уязвимостей в коде (Bandit)
-      # Исключаем тестовые файлы (test_*), так как использование assert в тестах безопасно
         run: bandit -r . -x ./.venv*,./test_*.py -f screen
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
-        continue-on-error: true  
+        continue-on-error: true
         run: pip-audit -r requirements.txt
 
   container-scan:
