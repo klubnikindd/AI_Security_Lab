@@ -246,3 +246,14 @@ docker compose down
 **Доказательства (Скриншот результат работы в Docker):**
 ![Docker Run](screenshots/docker_run1.png)
 ![Docker Run](screenshots/docker_run2.png)
+
+## 🛡 DevSecOps Pipeline (GitHub Actions)
+
+В проекте настроен полный CI/CD пайплайн, который автоматически запускается при каждом коммите:
+- **Unit Tests:** Проверка логики Guardrails (pytest).
+- **SAST:** Статический анализ кода на уязвимости (Bandit).
+- **SCA:** Аудит зависимостей на наличие CVE (pip-audit). Реализован паттерн *Risk Acceptance* для конфликтующих зависимостей `llm-guard`.
+- **Container Scan:** Сборка и сканирование Docker-образа (Trivy).
+
+*Текущий статус пайплайна:*
+[![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
