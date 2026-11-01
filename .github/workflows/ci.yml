@@ -24,11 +24,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install bandit pip-audit
+          pip install -r requirements.txt
 
-      - name: 4. SAST - Поиск уязвимостей в коде (Bandit)
+      - name: 4. Запуск Unit-тестов (pytest)
+        run: pytest test_security.py -v
+
+      - name: 5. SAST - Поиск уязвимостей в коде (Bandit)
         run: bandit -r . -x ./.venv* -f screen
 
-      - name: 5. Dependency Audit - Проверка библиотек (pip-audit)
+      - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
         continue-on-error: true  # <--- ВОТ ЭТО
         run: pip-audit -r requirements.txt
 
