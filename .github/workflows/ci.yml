@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# НОВЫЙ БЛОК: Ограничиваем права токена только чтением
+permissions:
+  contents: read
+
 jobs:
   sast-and-dependencies:
     name: SAST & Dependency Audit

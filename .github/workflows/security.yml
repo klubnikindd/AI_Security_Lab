@@ -1,5 +1,8 @@
 name: Security Scan
 on: [push]
+# НОВЫЙ БЛОК: Ограничиваем права токена только чтением
+permissions:
+  contents: read
 jobs:
   security:
     runs-on: ubuntu-latest
