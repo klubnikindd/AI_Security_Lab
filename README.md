@@ -10,6 +10,7 @@
 5. [Этап 3: Эшелонированная оборона (Secure Gateway)](#-этап-3-эшелонированная-оборона-secure-gateway)
 6. [Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
 7. [Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
+8. [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
 
 
 ---
