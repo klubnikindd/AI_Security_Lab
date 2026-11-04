@@ -11,6 +11,7 @@
 6. [Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
 7. [Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
 8. [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
+9. [🌐 Этап 6: Веб-интерфейс (FastAPI)](#-этап-6-веб-интерфейс-fastapi)
 
 
 ---
@@ -248,6 +249,19 @@ docker compose down
 ![Docker Run](screenshots/docker_run1.png)
 ![Docker Run](screenshots/docker_run2.png)
 
+
+## 🛡 DevSecOps Pipeline (GitHub Actions)
+
+В проекте настроен полный CI/CD пайплайн, который автоматически запускается при каждом коммите:
+- **Unit Tests:** Проверка логики Guardrails (pytest).
+- **SAST:** Статический анализ кода на уязвимости (Bandit).
+- **SCA:** Аудит зависимостей на наличие CVE (pip-audit). Реализован паттерн *Risk Acceptance* для конфликтующих зависимостей `llm-guard`.
+- **Container Scan:** Сборка и сканирование Docker-образа (Trivy).
+
+*Текущий статус пайплайна:*
+[![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
+
+
 ## 🌐 Этап 6: Веб-интерфейс (FastAPI)
 
 Проект обернут в полноценный REST API на базе **FastAPI**. Теперь для взаимодействия с шлюзом не нужно запускать скрипты вручную — достаточно отправить HTTP-запрос.
@@ -265,14 +279,3 @@ docker compose up -d --build
 
 ![FastAPI Swagger UI](screenshots/09_fastapi_swagger.png)
 Скриншот 9: Веб-интерфейс Secure Gateway API в Docker.
-
-## 🛡 DevSecOps Pipeline (GitHub Actions)
-
-В проекте настроен полный CI/CD пайплайн, который автоматически запускается при каждом коммите:
-- **Unit Tests:** Проверка логики Guardrails (pytest).
-- **SAST:** Статический анализ кода на уязвимости (Bandit).
-- **SCA:** Аудит зависимостей на наличие CVE (pip-audit). Реализован паттерн *Risk Acceptance* для конфликтующих зависимостей `llm-guard`.
-- **Container Scan:** Сборка и сканирование Docker-образа (Trivy).
-
-*Текущий статус пайплайна:*
-[![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
