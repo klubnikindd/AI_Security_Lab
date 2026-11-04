@@ -13,6 +13,8 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434 # Указываем адрес контейнера Ollama
       - HF_HUB_DISABLE_XET=1 # Отключаем проблемный сервер
+    ports:
+      - "8000:8000"
     depends_on:
       - ollama
 

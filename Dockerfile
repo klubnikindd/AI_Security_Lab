@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем исходный код
 COPY . .
 
-# Команда по умолчанию
-CMD ["python", "secure_gateway.py"]
+# Запускаем веб-сервер вместо скрипта
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]

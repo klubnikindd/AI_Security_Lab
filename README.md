@@ -248,6 +248,24 @@ docker compose down
 ![Docker Run](screenshots/docker_run1.png)
 ![Docker Run](screenshots/docker_run2.png)
 
+## 🌐 Этап 6: Веб-интерфейс (FastAPI)
+
+Проект обернут в полноценный REST API на базе **FastAPI**. Теперь для взаимодействия с шлюзом не нужно запускать скрипты вручную — достаточно отправить HTTP-запрос.
+
+### Эндпоинты:
+*   `POST /chat` — основной эндпоинт для общения с LLM. Принимает JSON с промптом, прогоняет его через 4 слоя защиты и возвращает ответ модели.
+*   `GET /health` — проверка статуса сервиса.
+*   `GET /docs` — интерактивная документация (Swagger UI).
+
+### Запуск через Docker:
+```bash
+docker compose up -d --build
+```
+После запуска Swagger UI доступен по адресу: http://localhost:8000/docs.
+
+![FastAPI Swagger UI](screenshots/09_fastapi_swagger.png)
+Скриншот 9: Веб-интерфейс Secure Gateway API в Docker.
+
 ## 🛡 DevSecOps Pipeline (GitHub Actions)
 
 В проекте настроен полный CI/CD пайплайн, который автоматически запускается при каждом коммите:
