@@ -279,3 +279,7 @@ docker compose up -d --build
 
 ![FastAPI Swagger UI](screenshots/09_fastapi_swagger.png)
 Скриншот 9: Веб-интерфейс Secure Gateway API в Docker.
+
+## 🌐 Live Demo (Живая демонстрация)
+Вы можете протестировать API прямо в браузере, не устанавливая проект локально:
+👉 **[Swagger UI (Live Demo)](https://glowing-train-qpxpxxqvj9c64jp-8000.app.github.dev//docs)**
