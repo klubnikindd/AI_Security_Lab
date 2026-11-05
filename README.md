@@ -12,6 +12,7 @@
 7. [Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
 8. [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
 9. [🌐 Этап 6: Веб-интерфейс (FastAPI)](#-этап-6-веб-интерфейс-fastapi)
+10. [📚 Этап 7: Безопасность RAG-систем (Data Poisoning & Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
 
 
 ---
