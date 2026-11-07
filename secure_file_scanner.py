@@ -2,6 +2,7 @@ import os
 import re
 import base64
 import unicodedata
+import logging
 from pathlib import Path
 from mcp.server import MCPServer
 from bs4 import BeautifulSoup, Comment, Tag
@@ -9,16 +10,21 @@ from bs4 import BeautifulSoup, Comment, Tag
 mcp = MCPServer("Secure File Scanner")
 
 def decode_base64_strings(text: str) -> str:
-    """Находит и декодирует Base64-строки."""
+    """Находит строки, похожие на Base64, декодирует их и возвращает объединенный текст."""
     pattern = r'[A-Za-z0-9+/]{20,}={0,2}'
+    matches = re.findall(pattern, text)
+    
     decoded_parts = []
-    for match in re.findall(pattern, text):
+    for match in matches:
         try:
             decoded = base64.b64decode(match).decode('utf-8', errors='ignore')
             if decoded.strip():
                 decoded_parts.append(decoded)
-        except Exception:
-            pass
+        except Exception as e:
+            # Логируем ошибку (это satisfies Bandit)
+            logging.debug(f"[Scanner] Ошибка декодирования Base64: {e}")
+            continue # <--- Вместо pass используем continue
+            
     return text + ("\n" + "\n".join(decoded_parts) if decoded_parts else "")
 
 def remove_zero_width_chars(text: str) -> str:
