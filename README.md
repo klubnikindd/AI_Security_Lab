@@ -3,16 +3,33 @@
 ![Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)
 
 ## 📑 Оглавление
-1. [Обзор проекта](#-обзор-проекта)
-2. [Стек и инструменты](#-стек-и-инструменты)
-3. [Этап 1: Red Teaming (Поиск уязвимостей)](#-этап-1-red-teaming-поиск-уязвимостей)
-4. [Этап 2: Базовая защита (Blue Team)](#-этап-2-базовая-защита-blue-team)
-5. [Этап 3: Эшелонированная оборона (Secure Gateway)](#-этап-3-эшелонированная-оборона-secure-gateway)
-6. [Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
-7. [Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
-8. [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
-9. [🌐 Этап 6: Веб-интерфейс (FastAPI)](#-этап-6-веб-интерфейс-fastapi)
-10. [📚 Этап 7: Безопасность RAG-систем (Data Poisoning & Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
+- [LLM Security Assessment: Prompt Injection Testing (Ollama + phi3)](#llm-security-assessment-prompt-injection-testing-ollama--phi3)
+  - [📑 Оглавление](#-оглавление)
+  - [🎯 Обзор проекта](#-обзор-проекта)
+  - [🛠 Стек и инструменты](#-стек-и-инструменты)
+  - [🚨 Этап 1: Red Teaming (Поиск уязвимостей)](#-этап-1-red-teaming-поиск-уязвимостей)
+    - [📊 Результаты (Findings)](#-результаты-findings)
+  - [🛡 Этап 2: Базовая защита (Blue Team)](#-этап-2-базовая-защита-blue-team)
+  - [🏰 Этап 3: Эшелонированная оборона (Secure Gateway)](#-этап-3-эшелонированная-оборона-secure-gateway)
+    - [Версия 1: Базовая (Файл `secure_gateway_one.py`)](#версия-1-базовая-файл-secure_gateway_onepy)
+    - [Версия 2: Продвинутая (Файл `secure_gateway.py`)](#версия-2-продвинутая-файл-secure_gatewaypy)
+  - [🤖 Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
+    - [Уязвимая версия (`vulnerable_agent.py`)](#уязвимая-версия-vulnerable_agentpy)
+    - [Защищенная версия (`secure_agent.py`)](#защищенная-версия-secure_agentpy)
+  - [🐳 Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
+    - [Архитектура Docker-развертывания](#архитектура-docker-развертывания)
+    - [🚀 Как запустить](#-как-запустить)
+  - [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
+  - [🌐 Этап 6: Веб-интерфейс (FastAPI)](#-этап-6-веб-интерфейс-fastapi)
+    - [Эндпоинты:](#эндпоинты)
+    - [Запуск через Docker:](#запуск-через-docker)
+  - [🌐 Live Demo (Живая демонстрация)](#-live-demo-живая-демонстрация)
+  - [📚 Этап 7: Безопасность RAG-систем (Data Poisoning \& Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
+    - [💀 Уязвимая версия (`vulnerable_rag.py`)](#-уязвимая-версия-vulnerable_ragpy)
+    - [💀 1. Схема работы vulnerable\_rag.py (Уязвимая версия)](#-1-схема-работы-vulnerable_ragpy-уязвимая-версия)
+    - [🛡️ Защищенная версия (`secure_rag.py`)](#️-защищенная-версия-secure_ragpy)
+    - [🛡️ 2. Схема работы secure\_rag.py (Защищенная версия)](#️-2-схема-работы-secure_ragpy-защищенная-версия)
+    - [🛡 RAG v2: Защита от Data Poisoning на этапе индексации](#-rag-v2-защита-от-data-poisoning-на-этапе-индексации)
 
 
 ---
@@ -354,3 +371,17 @@ graph TD
 
 ![Secure RAG](screenshots/11_secure_rag.png)
 *Скриншот 11: Успешная защита. Сканер обнаружил угрозу (Risk: 1.0), документ заблокирован, модель не получила вредоносный контекст.*
+
+
+### 🛡 RAG v2: Защита от Data Poisoning на этапе индексации
+
+В обновленной RAG-системе (`secure_rag_v2.py`) на базе LangChain и ChromaDB реализован многоуровневый контроль безопасности:
+
+1. **На этапе индексации:** каждый чанк документа прогоняется через `LLM Guard`. Отравленные фрагменты (с HTML-комментариями, Base64, скрытым текстом) блокируются и не попадают в векторную базу.
+2. **На этапе запроса:** входящий запрос пользователя проверяется на Prompt Injection.
+3. **На этапе ответа:** ответ модели проверяется на наличие PII.
+
+**Результат тестирования:** при загрузке «вооруженного» файла `evil_notes.txt` (содержащего 6 различных векторов атак) все вредоносные чанки были обнаружены и заблокированы. В векторную базу попали только безопасные данные.
+
+![RAG v2 Defense](screenshots/12_rag_v2_defense.png)
+*Скриншот 12: Блокировка отравленных чанков на этапе индексации RAG-системы.*
