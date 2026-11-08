@@ -24,6 +24,7 @@
     - [Эндпоинты:](#эндпоинты)
     - [Запуск через Docker:](#запуск-через-docker)
   - [🌐 Live Demo (Живая демонстрация)](#-live-demo-живая-демонстрация)
+    - [📊 Observability (Метрики Prometheus)](#-observability-метрики-prometheus)
   - [📚 Этап 7: Безопасность RAG-систем (Data Poisoning \& Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
     - [💀 Уязвимая версия (`vulnerable_rag.py`)](#-уязвимая-версия-vulnerable_ragpy)
     - [💀 1. Схема работы vulnerable\_rag.py (Уязвимая версия)](#-1-схема-работы-vulnerable_ragpy-уязвимая-версия)
@@ -305,6 +306,20 @@ docker compose up -d --build
 ## 🌐 Live Demo (Живая демонстрация)
 Вы можете протестировать API прямо в браузере, не устанавливая проект локально:
 👉 **[Swagger UI (Live Demo)](https://glowing-train-qpxpxxqvj9c64jp-8000.app.github.dev//docs)**
+
+### 📊 Observability (Метрики Prometheus)
+
+В FastAPI-версии шлюза добавлены счётчики Prometheus для мониторинга эффективности каждого слоя защиты:
+*   `gateway_requests_total` — общее количество запросов.
+*   `gateway_input_blocked_total` — заблокировано на входе (Prompt Injection).
+*   `gateway_input_passed_total` — прошло входной фильтр.
+*   `gateway_output_blocked_total` — заблокировано на выходе (PII).
+*   `gateway_output_passed_total` — успешно прошло выходной фильтр.
+
+Эндпоинт `/metrics` отдаёт данные в формате, совместимом с Prometheus. Это позволяет подключить систему мониторинга (например, Prometheus + Grafana) и визуализировать, сколько атак блокируется на каждом слое, а сколько доходит до модели. Без таких метрик невозможно понять, где узкое место системы и насколько эффективны фильтры.
+
+![FastAPI Metrics](screenshots/14_fastapi_metrics.png)
+*Скриншот 14: Метрики Prometheus в FastAPI-шлюзе. Видно, что 1 запрос был заблокирован на входе, а 1 — успешно прошел все слои.*
 
 
 ## 📚 Этап 7: Безопасность RAG-систем (Data Poisoning & Indirect Prompt Injection)
