@@ -13,13 +13,33 @@ services:
     build: .
     container_name: secure_gateway
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_HOST=http://ollama-exporter:8000
     ports:
       - "8000:8000"
     depends_on:
       - ollama
     networks:
       - monitoring
+
+  ollama-exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile.exporter
+    container_name: ollama_exporter
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+    networks:
+      - monitoring
+    depends_on:
+      - ollama
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   prometheus:
     image: prom/prometheus:latest

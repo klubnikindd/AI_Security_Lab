@@ -28,6 +28,8 @@
   - [📊 Observability: Мониторинг LLM Firewall (Prometheus + Grafana)](#-observability-мониторинг-llm-firewall-prometheus--grafana)
     - [Дашборд Grafana (часть 1): Общая нагрузка и блокировки на входе](#дашборд-grafana-часть-1-общая-нагрузка-и-блокировки-на-входе)
     - [Дашборд Grafana (часть 2): Пропущенные запросы и блокировки на выходе](#дашборд-grafana-часть-2-пропущенные-запросы-и-блокировки-на-выходе)
+    - [⚖️ LLM-судья и кастомный Ollama Exporter](#️-llm-судья-и-кастомный-ollama-exporter)
+    - [📊 Дашборды Grafana](#-дашборды-grafana)
   - [📚 Этап 7: Безопасность RAG-систем (Data Poisoning \& Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
     - [💀 Уязвимая версия (`vulnerable_rag.py`)](#-уязвимая-версия-vulnerable_ragpy)
     - [💀 1. Схема работы vulnerable\_rag.py (Уязвимая версия)](#-1-схема-работы-vulnerable_ragpy-уязвимая-версия)
@@ -347,6 +349,42 @@ docker compose up -d --build
 ![Grafana Dashboard Part 2](screenshots/16_grafana_dashboard_part2.png)
 *Скриншот 16: Панели «Прошло запросов» (7) и «Заблокировано ответов» (1). Из 7 дошедших до модели запросов 1 ответ был заблокирован из-за PII.*
 
+### ⚖️ LLM-судья и кастомный Ollama Exporter
+
+В финальной версии шлюза добавлен второй слой семантической проверки на выходе — **LLM-судья** (`llama3.1:8b`). В отличие от сканера `Sensitive` (который ищет паттерны), LLM-судья анализирует смысл ответа и блокирует перефразированные утечки или небезопасные инструкции.
+
+Для мониторинга производительности обеих моделей (`phi3` и `llama3.1`) был написан **собственный Ollama Exporter**. Он работает как прозрачный прокси, перехватывает ответы от Ollama и извлекает метрики:
+* `ollama_requests_total` — количество запросов к каждой модели.
+* `ollama_tokens_per_second` — скорость генерации.
+* `ollama_generated_tokens_total` — общее количество сгенерированных токенов.
+
+**Результат тестирования:**
+* `gateway_judge_blocked_total` = 3 (судья заблокировал 3 ответа).
+* `gateway_judge_passed_total` = 2 (судья одобрил 2 ответа).
+* Скорость генерации `llama3.1` составила ~10 токенов/сек, `phi3` — ~24 токена/сек.
+
+### 📊 Дашборды Grafana
+
+В проекте настроены два дашборда для мониторинга LLM Firewall:
+
+**1. Безопасность (Security Dashboard):**
+Показывает эффективность каждого слоя защиты в реальном времени:
+*   Всего запросов / Заблокировано на входе (Prompt Injection).
+*   Прошло входной фильтр.
+*   Заблокировано на выходе (PII + вердикты LLM-судьи).
+*   Отдельные счётчики для вердиктов LLM-судьи (`gateway_judge_blocked_total`, `gateway_judge_passed_total`).
+
+![Grafana Security Dashboard](screenshots/17_grafana_security_dashboard.png)
+
+**2. Производительность (Performance Dashboard):**
+Мониторинг скорости и нагрузки на обе модели через кастомный Ollama Exporter:
+*   Скорость генерации (токенов/сек) для `phi3` и `llama3.1`.
+*   Общее количество сгенерированных токенов.
+*   Количество запросов к каждой модели.
+
+![Grafana Performance Dashboard](screenshots/18_grafana_performance_dashboard.png)
+
+*Скриншоты 15–16: Дашборды Grafana с метриками безопасности и производительности LLM Firewall.*
 
 ## 📚 Этап 7: Безопасность RAG-систем (Data Poisoning & Indirect Prompt Injection)
 
