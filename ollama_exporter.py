@@ -1,4 +1,5 @@
 import os
+import logging
 import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -108,13 +109,15 @@ async def proxy_generate(request: Request):
                     async for chunk in r.aiter_raw():
                         yield chunk
                         # Пытаемся распарсить финальный чанк с метриками
-                        try:
-                            import json
-                            parsed = json.loads(chunk)
-                            if parsed.get("done"):
-                                last_data = parsed
-                        except Exception:
-                            pass
+                            try:
+                                import json
+                                parsed = json.loads(chunk)
+                                if parsed.get("done"):
+                                    last_data = parsed
+                            except Exception as e:
+                                # Чанк может быть неполным JSON, логируем для отладки и идем дальше
+                                logging.debug(f"Could not parse chunk: {e}")
+                                continue
         except httpx.HTTPError as e:
             OLLAMA_ERRORS.labels(model=model).inc()
             yield f'{{"error": "{e}"}}'.encode()
