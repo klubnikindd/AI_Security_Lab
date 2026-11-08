@@ -5,18 +5,57 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ollama_data:/root/.ollama # Сохраняем модели, чтобы не скачивать их каждый раз
-    
+      - ollama_data:/root/.ollama
+    networks:
+      - monitoring
+
   gateway:
     build: .
     container_name: secure_gateway
     environment:
-      - OLLAMA_HOST=http://ollama:11434 # Указываем адрес контейнера Ollama
-      - HF_HUB_DISABLE_XET=1 # Отключаем проблемный сервер
+      - OLLAMA_HOST=http://ollama:11434
     ports:
       - "8000:8000"
     depends_on:
       - ollama
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
 
 volumes:
   ollama_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  monitoring:
+    driver: bridge
