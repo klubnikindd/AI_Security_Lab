@@ -5,6 +5,7 @@
 ## 📑 Оглавление
 - [LLM Security Assessment: Prompt Injection Testing (Ollama + phi3)](#llm-security-assessment-prompt-injection-testing-ollama--phi3)
   - [📑 Оглавление](#-оглавление)
+  - [📚 Дополнительная документация](#-дополнительная-документация)
   - [🎯 Обзор проекта](#-обзор-проекта)
   - [🛠 Стек и инструменты](#-стек-и-инструменты)
   - [🚨 Этап 1: Red Teaming (Поиск уязвимостей)](#-этап-1-red-teaming-поиск-уязвимостей)
@@ -44,6 +45,12 @@
     - [⚖️ Сравнение: Текущий PoC vs Production Target](#️-сравнение-текущий-poc-vs-production-target)
     - [🗺 Визуальная дорожная карта](#-визуальная-дорожная-карта)
     - [📌 Детализация этапов](#-детализация-этапов)
+
+## 📚 Дополнительная документация
+Помимо этого файла, в репозитории есть подробные отчеты по каждому этапу разработки:
+- 📐 **[Архитектура проекта (ARCHITECTURE.md)](ARCHITECTURE.md)** — полная схема всех контейнеров и потоков данных.
+- 🔬 **[Отчет об атаке на AI-агента (AGENT_ATTACK_REPORT.md)](AGENT_ATTACK_REPORT.md)** — исследование Indirect Prompt Injection и защита через MCP-сервер.
+- 🧪 **[Отчет по тестированию API (TEST_API_REPORT.md)](TEST_API_REPORT.md)** — методология Chaos-тестирования, алгоритмы скриптов и результаты прогонов.
 
 ---
 
@@ -389,6 +396,8 @@ docker compose up -d --build
 ![Grafana Performance Dashboard](screenshots/18_grafana_performance_dashboard.png)
 
 *Скриншоты 15–16: Дашборды Grafana с метриками безопасности и производительности LLM Firewall.*
+
+> 🧪 **Подробный отчет по нагрузочному и Chaos-тестированию API (с алгоритмами скриптов и таблицей результатов)** доступен в файле [TEST_API_REPORT.md](TEST_API_REPORT.md).
 
 ## 📚 Этап 7: Безопасность RAG-систем (Data Poisoning & Indirect Prompt Injection)
 
