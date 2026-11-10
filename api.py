@@ -331,8 +331,8 @@ def health():
     try:
         r = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=3)
         ollama_ok = r.status_code == 200
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(f"[health] Ollama is unreachable: {e}")
     return {
         "status": "ok" if ollama_ok else "degraded",
         "ollama_reachable": ollama_ok,
