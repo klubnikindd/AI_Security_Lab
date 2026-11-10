@@ -17,7 +17,7 @@
   - [🤖 Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
     - [Уязвимая версия (`vulnerable_agent.py`)](#уязвимая-версия-vulnerable_agentpy)
     - [Защищенная версия (`secure_agent.py`)](#защищенная-версия-secure_agentpy)
-  - [🐳 Этап 5: Контейнеризация (Docker)](#-этап-5-контейнеризация-docker)
+  - [🐳 Этап 5: Контейнеризация (Docker Compose)](#-этап-5-контейнеризация-docker-compose)
     - [Архитектура Docker-развертывания](#архитектура-docker-развертывания)
     - [🚀 Как запустить](#-как-запустить)
   - [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
@@ -25,10 +25,12 @@
     - [Эндпоинты:](#эндпоинты)
     - [Запуск через Docker:](#запуск-через-docker)
   - [🌐 Live Demo (Живая демонстрация)](#-live-demo-живая-демонстрация)
-    - [📊 Observability (Метрики Prometheus)](#-observability-метрики-prometheus)
   - [📊 Observability: Мониторинг LLM Firewall (Prometheus + Grafana)](#-observability-мониторинг-llm-firewall-prometheus--grafana)
-    - [Дашборд Grafana (часть 1): Общая нагрузка и блокировки на входе](#дашборд-grafana-часть-1-общая-нагрузка-и-блокировки-на-входе)
-    - [Дашборд Grafana (часть 2): Пропущенные запросы и блокировки на выходе](#дашборд-grafana-часть-2-пропущенные-запросы-и-блокировки-на-выходе)
+    - [🚦 Входной трафик и Rate Limiting](#-входной-трафик-и-rate-limiting)
+    - [🛡️ Выходные Guardrails (Блокировки)](#️-выходные-guardrails-блокировки)
+    - [⚡ Оптимизация ресурсов (FinOps)](#-оптимизация-ресурсов-finops)
+    - [📈 Метрики производительности моделей (Ollama Exporter)](#-метрики-производительности-моделей-ollama-exporter)
+    - [Дашборды Grafana](#дашборды-grafana)
     - [⚖️ LLM-судья и кастомный Ollama Exporter](#️-llm-судья-и-кастомный-ollama-exporter)
     - [📊 Дашборды Grafana](#-дашборды-grafana)
   - [📚 Этап 7: Безопасность RAG-систем (Data Poisoning \& Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
@@ -59,10 +61,14 @@
 > 📐 **Полная схема архитектуры** (все компоненты, потоки данных, порты) — в файле [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 🛠 Стек и инструменты
-* **Цель (Target):** Локальная LLM `phi3`, развернутая через Ollama.
-* **Инструмент сканирования:** NVIDIA Garak (v0.17.1) — сканер уязвимостей LLM.
-* **Инструмент защиты:** LLM Guard (Protect AI).
-* **Среда:** Windows 11, Python 3.12, изолированное окружение (venv).
+
+*   **Цель (Target):** Локальная LLM `phi3` (через Ollama) и `llama3.1:8b` (в роли LLM-судьи).
+*   **Red Teaming (Атака):** NVIDIA Garak (v0.17.1).
+*   **Blue Team (Защита):** LLM Guard (Protect AI), Microsoft Presidio (для PII), эвристики RED_FLAG, энтропийный анализ.
+*   **Инфраструктура:** Docker, Docker Compose (5 контейнеров), WSL 2 (Ubuntu), FastAPI, Uvicorn.
+*   **Observability:** Prometheus (сбор метрик), Grafana (визуализация), собственный Ollama Exporter.
+*   **RAG-система:** LangChain, ChromaDB, Ollama Embeddings (`nomic-embed-text`).
+*   **Среда разработки:** Windows 11, Python 3.12, изолированное окружение (venv).
 
 ---
 
@@ -216,77 +222,78 @@ graph TD
 **Доказательства (Скриншот защищенного агента):**
 ![Secure Agent](screenshots/secure_agent_result.png)
 
-## 🐳 Этап 5: Контейнеризация (Docker)
-Для обеспечения воспроизводимости, изоляции и простоты развертывания проект полностью упакован в Docker. Вся система (Шлюз безопасности + LLM) разворачивается одной командой.
+## 🐳 Этап 5: Контейнеризация (Docker Compose)
+
+Для обеспечения воспроизводимости, изоляции и простоты развертывания проект полностью упакован в Docker. Вся система (Шлюз, LLM, Мониторинг) разворачивается одной командой.
 
 ### Архитектура Docker-развертывания
-Проект состоит из двух контейнеров, объединенных в единую внутреннюю сеть `ai_security_lab_default`:
-1. **`gateway`**: Python-приложение с реализованными слоями защиты (Rate Limiting, Input/Output Guardrails).
-2. **`ollama_server`**: Сервер Ollama с моделью `phi3`.
-3. **`ollama_data`**: Docker Volume для кэширования скачанных моделей (чтобы не качать их при каждом перезапуске).
+
+Проект состоит из **пяти контейнеров**, объединенных в единую внутреннюю сеть `ai_security_lab_monitoring`:
+
+1.  **`secure_gateway`**: Python-приложение (FastAPI) с реализованными слоями защиты (Rate Limiting, Input/Output Guardrails, LLM Judge).
+2.  **`ollama_server`**: Сервер Ollama с моделями `phi3` (основная) и `llama3.1:8b` (судья).
+3.  **`ollama_exporter`**: Кастомный прозрачный прокси, который собирает метрики токенов и скорости генерации.
+4.  **`prometheus`**: База данных временных рядов для сбора метрик.
+5.  **`grafana`**: Платформа для визуализации дашбордов (Security и Performance).
+
+Также используются постоянные тома (volumes):
+*   `ollama_data`: кэширует скачанные модели (чтобы не качать их при каждом перезапуске).
+*   `hf_cache`: кэширует модели HuggingFace (DeBERTa, Presidio) для быстрого старта `gateway`.
 
 ```mermaid
 graph TD
     subgraph Host["🖥️ Хост-машина (Windows 11 + WSL 2)"]
         User[👤 Пользователь]
-        Terminal[⌨️ Терминал / VS Code]
+        Browser[🌐 Браузер<br/>localhost:8000, 9090, 3000]
     end
 
-    subgraph DockerNet["🐳 Docker Network (ai_security_lab_default)"]
-        
-        subgraph Gateway["🛡️ Контейнер: secure_gateway (Python)"]
-            L1{"⏱️ Слой 1: Rate Limiter"}
-            L2{"🤖 Слой 2: Input Guard<br/>(LLM Guard)"}
-            L3{"🕵️ Слой 4: Output Guard<br/>(LLM Guard)"}
-        end
-        
-        subgraph Ollama["🦙 Контейнер: ollama_server"]
-            LLM["Модель phi3<br/>(на CPU)"]
-        end
-        
-        Volume[("💾 Volume: ollama_data<br/>(Кэш моделей)")]
+    subgraph DockerNet["🐳 Docker Network (ai_security_lab_monitoring)"]
+        Gateway["🛡️ secure_gateway<br/>(FastAPI :8000)"]
+        Exporter["📈 ollama_exporter<br/>(Прокси + Метрики)"]
+        Ollama["🦙 ollama_server<br/>(phi3 + llama3.1)"]
+        Prom["📈 prometheus<br/>(Сбор метрик)"]
+        Graf["📊 grafana<br/>(Дашборды)"]
     end
 
-    User --> Terminal
-    Terminal -->|"1. Запуск скрипта"| Gateway
-    Gateway -->|"2. Входящий промпт"| L1
-    L1 -->|"Лимит ОК"| L2
-    L2 -->|"Промпт безопасен"| L3
-    L3 -.->|"3. HTTP POST<br/>(http://ollama:11434)"| Ollama
-    Ollama -->|"4. Ответ модели"| L3
-    L3 -->|"5. Проверка на PII"| Terminal
+    User -->|"POST /chat"| Gateway
+    Gateway -->|"HTTP Запрос"| Exporter
+    Exporter -->|"Проксирование"| Ollama
     
-    L1 -->|"Блок: Слишком много запросов"| Terminal
-    L2 -->|"Блок: Prompt Injection"| Terminal
-    L3 -->|"Блок: Утечка данных"| Terminal
+    Prom -.->|"Scrape /metrics"| Gateway
+    Prom -.->|"Scrape /metrics"| Exporter
+    Graf -.->|"Query"| Prom
     
-    Ollama --- Volume
-    
+    Browser -.->|"Просмотр"| Gateway
+    Browser -.->|"Просмотр"| Prom
+    Browser -.->|"Просмотр"| Graf
+
     style Gateway fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
     style Ollama fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    style Volume fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    style L1 fill:#fff9c4,stroke:#fbc02d
-    style L2 fill:#fff9c4,stroke:#fbc02d
-    style L3 fill:#fff9c4,stroke:#fbc02d
+    style Exporter fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Prom fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+    style Graf fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
 ```
 
 ### 🚀 Как запустить
+
 Для запуска всей инфраструктуры достаточно выполнить:
 
 ```bash
-# Запуск контейнеров в фоне (сборка образа gateway и запуск ollama)
+# Запуск всех контейнеров в фоне (сборка образа gateway и запуск остальных)
 docker compose up -d --build
 
-# Запуск тестового скрипта внутри контейнера gateway
+# Запуск тестового скрипта внутри контейнера gateway (опционально)
 docker compose run --rm gateway python secure_gateway.py
-
-# Остановка и удаление контейнеров после работы
-docker compose down
 ```
 
-**Доказательства (Скриншот результат работы в Docker):**
-![Docker Run](screenshots/docker_run1.png)
-![Docker Run](screenshots/docker_run2.png)
+**Доступные сервисы после запуска:**
+*   **Swagger UI (API):** [http://localhost:8000/docs](http://localhost:8000/docs)
+*   **Prometheus (Метрики):** [http://localhost:9090](http://localhost:9090)
+*   **Grafana (Дашборды):** [http://localhost:3000](http://localhost:3000) (admin/admin)
+
+**Доказательства (Скриншоты Docker):**
+![Docker Run 1](screenshots/docker_run1.png)
+![Docker Run 2](screenshots/docker_run2.png)
 
 
 ## 🛡 DevSecOps Pipeline (GitHub Actions)
@@ -303,11 +310,12 @@ docker compose down
 
 ## 🌐 Этап 6: Веб-интерфейс (FastAPI)
 
-Проект обернут в полноценный REST API на базе **FastAPI**. Теперь для взаимодействия с шлюзом не нужно запускать скрипты вручную — достаточно отправить HTTP-запрос.
+Проект обернут в полноценный REST API на базе FastAPI. Теперь для взаимодействия с шлюзом не нужно запускать скрипты вручную — достаточно отправить HTTP-запрос.
 
 ### Эндпоинты:
-*   `POST /chat` — основной эндпоинт для общения с LLM. Принимает JSON с промптом, прогоняет его через 4 слоя защиты и возвращает ответ модели.
-*   `GET /health` — проверка статуса сервиса.
+*   `POST /chat` — основной эндпоинт для общения с LLM. Принимает JSON с промптом, прогоняет его через **6 слоёв защиты** и возвращает ответ модели.
+*   `GET /health` — проверка статуса сервиса (включая доступность Ollama и инициализацию Presidio).
+*   `GET /metrics` — эндпоинт для сбора метрик Prometheus.
 *   `GET /docs` — интерактивная документация (Swagger UI).
 
 ### Запуск через Docker:
@@ -323,42 +331,50 @@ docker compose up -d --build
 Вы можете протестировать API прямо в браузере, не устанавливая проект локально:
 👉 **[Swagger UI (Live Demo)](https://glowing-train-qpxpxxqvj9c64jp-8000.app.github.dev//docs)**
 
-### 📊 Observability (Метрики Prometheus)
-
-В FastAPI-версии шлюза добавлены счётчики Prometheus для мониторинга эффективности каждого слоя защиты:
-*   `gateway_requests_total` — общее количество запросов.
-*   `gateway_input_blocked_total` — заблокировано на входе (Prompt Injection).
-*   `gateway_input_passed_total` — прошло входной фильтр.
-*   `gateway_output_blocked_total` — заблокировано на выходе (PII).
-*   `gateway_output_passed_total` — успешно прошло выходной фильтр.
-
-Эндпоинт `/metrics` отдаёт данные в формате, совместимом с Prometheus. Это позволяет подключить систему мониторинга (например, Prometheus + Grafana) и визуализировать, сколько атак блокируется на каждом слое, а сколько доходит до модели. Без таких метрик невозможно понять, где узкое место системы и насколько эффективны фильтры.
-
-![FastAPI Metrics](screenshots/14_fastapi_metrics.png)
-*Скриншот 14: Метрики Prometheus в FastAPI-шлюзе. Видно, что 1 запрос был заблокирован на входе, а 1 — успешно прошел все слои.*
-
 ## 📊 Observability: Мониторинг LLM Firewall (Prometheus + Grafana)
 
-Для наглядного контроля за работой шлюза развернут полноценный стек мониторинга. 
-Метрики собираются с эндпоинта `/metrics` (Prometheus) и визуализируются на дашборде (Grafana).
+Для наглядного контроля за работой шлюза развернут полноценный стек мониторинга. Метрики собираются с эндпоинта `/metrics` (Prometheus) и визуализируются на дашбордах (Grafana).
 
-На дашборде отображаются:
-*   **Всего запросов** — общая нагрузка на систему.
-*   **Заблокировано атак (Input)** — сколько Prompt Injection было отсечено на входе.
-*   **Прошло запросов (Input)** — сколько безопасных запросов дошло до модели.
-*   **Заблокировано ответов (PII)** — сколько ответов модели было скрыто из-за утечки персональных данных.
+Все счётчики разделены на логические группы, чтобы в реальном времени видеть эффективность каждого слоя защиты и экономию ресурсов:
 
-Это позволяет в реальном времени видеть эффективность каждого слоя защиты и оперативно реагировать на аномалии.
+### 🚦 Входной трафик и Rate Limiting
+*   `gateway_requests_total` — общее количество запросов к `/chat`.
+*   `gateway_rate_limited_total` — запросы, отклоненные лимитером (HTTP 429) для защиты от DDoS и перебора.
+*   `gateway_input_blocked_total` — атаки (Prompt Injection), заблокированные на входе.
+*   `gateway_input_passed_total` — безопасные запросы, прошедшие входной фильтр.
 
-### Дашборд Grafana (часть 1): Общая нагрузка и блокировки на входе
+### 🛡️ Выходные Guardrails (Блокировки)
+*   `gateway_output_blocked_total` — общее количество ответов, скрытых от пользователя (PII, секреты).
+*   `gateway_sensitive_blocked_total` — блокировки сканером `Sensitive` (Presidio + NER).
+*   `gateway_red_flag_blocked_total` — блокировки по эвристике `RED_FLAG` (слова-маркеры).
+*   `gateway_entropy_blocked_total` — блокировки по энтропийному анализу (поиск API-ключей).
+*   `gateway_judge_blocked_total` — ответы, которые признала небезопасными LLM-судья (`llama3.1`).
 
-![Grafana Dashboard Part 1](screenshots/15_grafana_dashboard_part1.png)
-*Скриншот 15: Панели «Всего запросов» (10) и «Заблокировано атак» (3). Видно, что 30% трафика — это попытки Prompt Injection.*
+### ⚡ Оптимизация ресурсов (FinOps)
+*   `gateway_judge_skipped_total` — запросы, которые **не** отправлялись LLM-судье (сэкономленные ресурсы GPU на «быстром пути»).
+*   `gateway_judge_passed_total` — ответы, которые судья проверила и одобрила.
+*   `gateway_output_passed_total` — успешные ответы, дошедшие до пользователя.
 
-### Дашборд Grafana (часть 2): Пропущенные запросы и блокировки на выходе
+### 📈 Метрики производительности моделей (Ollama Exporter)
+Помимо метрик шлюза, кастомный `ollama_exporter` собирает телеметрию самих моделей:
+*   `ollama_requests_total{model}` — количество запросов к каждой модели.
+*   `ollama_tokens_per_second{model}` — скорость генерации токенов (`phi3` ~24 t/s, `llama3.1` ~10 t/s).
+*   `ollama_generated_tokens_total{model}` — общее количество сгенерированных токенов.
 
-![Grafana Dashboard Part 2](screenshots/16_grafana_dashboard_part2.png)
-*Скриншот 16: Панели «Прошло запросов» (7) и «Заблокировано ответов» (1). Из 7 дошедших до модели запросов 1 ответ был заблокирован из-за PII.*
+### Дашборды Grafana
+
+**1. Безопасность (Security Dashboard):**
+Показывает эффективность каждого слоя защиты в реальном времени (блокировки на входе, вердикты судьи, срабатывания RED_FLAG и энтропии).
+
+![Grafana Security Dashboard](screenshots/17_grafana_security_dashboard.png)
+*Скриншот 17: Дашборд безопасности с метриками блокировок.*
+
+**2. Производительность (Performance Dashboard):**
+Мониторинг скорости и нагрузки на обе модели через кастомный Ollama Exporter.
+
+![Grafana Performance Dashboard](screenshots/18_grafana_performance_dashboard.png)
+*Скриншот 18: Дашборд производительности с метриками Ollama.*
+
 
 ### ⚖️ LLM-судья и кастомный Ollama Exporter
 
@@ -385,7 +401,7 @@ docker compose up -d --build
 *   Заблокировано на выходе (PII + вердикты LLM-судьи).
 *   Отдельные счётчики для вердиктов LLM-судьи (`gateway_judge_blocked_total`, `gateway_judge_passed_total`).
 
-![Grafana Security Dashboard](screenshots/17_grafana_security_dashboard.png)
+![Test Grafana Security Dashboard](screenshots/19_grafana_security_dashboard_test.png)
 
 **2. Производительность (Performance Dashboard):**
 Мониторинг скорости и нагрузки на обе модели через кастомный Ollama Exporter:
@@ -393,7 +409,7 @@ docker compose up -d --build
 *   Общее количество сгенерированных токенов.
 *   Количество запросов к каждой модели.
 
-![Grafana Performance Dashboard](screenshots/18_grafana_performance_dashboard.png)
+![Test Grafana Performance Dashboard](screenshots/20_grafana_performance_dashboard_test.png)
 
 *Скриншоты 15–16: Дашборды Grafana с метриками безопасности и производительности LLM Firewall.*
 
