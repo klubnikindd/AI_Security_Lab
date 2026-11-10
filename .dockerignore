@@ -1,7 +1,10 @@
+.git
 .venv/
 .venv_garak/
 .venv_guard/
 __pycache__/
 *.pyc
-.git/
 screenshots/
+hf_cache/
+prometheus/data/
+grafana/data/

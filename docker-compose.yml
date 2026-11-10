@@ -14,6 +14,9 @@ services:
     container_name: secure_gateway
     environment:
       - OLLAMA_HOST=http://ollama-exporter:8000
+      - HF_HOME=/app/.cache/huggingface # Явно указываем путь к кэшу
+    volumes:
+      - ./hf_cache:/app/.cache/huggingface # Монтируем папку с хоста
     ports:
       - "8000:8000"
     depends_on:

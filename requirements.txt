@@ -1,6 +1,8 @@
 llm-guard==0.3.16
+presidio-analyzer
+presidio-anonymizer
 requests==2.34.2
 pytest==9.2.0
-fastapi==0.115.0
-uvicorn==0.30.6
+fastapi
+uvicorn[standard]
 prometheus-client

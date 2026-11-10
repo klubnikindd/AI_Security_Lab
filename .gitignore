@@ -3,3 +3,4 @@
 .venv_guard/
 __pycache__/
 *.pyc
+hf_cache/

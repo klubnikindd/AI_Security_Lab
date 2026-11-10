@@ -10,6 +10,11 @@ COPY requirements.txt .
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Предустанавливаем модели SpaCy для сканера Sensitive
+RUN python -m spacy download en_core_web_sm
+RUN python -m spacy download zh_core_web_sm
+RUN python -m spacy download ru_core_news_sm
+
 # Копируем исходный код
 COPY . .
 
