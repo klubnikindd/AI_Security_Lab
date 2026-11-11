@@ -1,93 +1,91 @@
-# LLM Security Assessment: Prompt Injection Testing (Ollama + phi3)
+# LLM Security Assessment: Prompt Injection Testing & Defense-in-Depth
 
-![Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)
+[![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
 
 ## 📑 Оглавление
-- [LLM Security Assessment: Prompt Injection Testing (Ollama + phi3)](#llm-security-assessment-prompt-injection-testing-ollama--phi3)
+- [LLM Security Assessment: Prompt Injection Testing \& Defense-in-Depth](#llm-security-assessment-prompt-injection-testing--defense-in-depth)
   - [📑 Оглавление](#-оглавление)
   - [📚 Дополнительная документация](#-дополнительная-документация)
   - [🎯 Обзор проекта](#-обзор-проекта)
   - [🛠 Стек и инструменты](#-стек-и-инструменты)
-  - [🚨 Этап 1: Red Teaming (Поиск уязвимостей)](#-этап-1-red-teaming-поиск-уязвимостей)
+  - [🚨 Этап 1: Red Teaming](#-этап-1-red-teaming)
     - [📊 Результаты (Findings)](#-результаты-findings)
   - [🛡 Этап 2: Базовая защита (Blue Team)](#-этап-2-базовая-защита-blue-team)
-  - [🏰 Этап 3: Эшелонированная оборона (Secure Gateway)](#-этап-3-эшелонированная-оборона-secure-gateway)
-    - [Версия 1: Базовая (Файл `secure_gateway_one.py`)](#версия-1-базовая-файл-secure_gateway_onepy)
-    - [Версия 2: Продвинутая (Файл `secure_gateway.py`)](#версия-2-продвинутая-файл-secure_gatewaypy)
+  - [🏰 Этап 3: Secure Gateway (4 слоя защиты)](#-этап-3-secure-gateway-4-слоя-защиты)
+    - [Версия 1: Базовая (`secure_gateway_one.py`)](#версия-1-базовая-secure_gateway_onepy)
+    - [Версия 2: Продвинутая (`secure_gateway.py`)](#версия-2-продвинутая-secure_gatewaypy)
   - [🤖 Этап 4: Безопасность AI-агентов (Excessive Agency)](#-этап-4-безопасность-ai-агентов-excessive-agency)
     - [Уязвимая версия (`vulnerable_agent.py`)](#уязвимая-версия-vulnerable_agentpy)
-    - [Защищенная версия (`secure_agent.py`)](#защищенная-версия-secure_agentpy)
+    - [Защищённая версия (`secure_agent.py`)](#защищённая-версия-secure_agentpy)
   - [🐳 Этап 5: Контейнеризация (Docker Compose)](#-этап-5-контейнеризация-docker-compose)
-    - [Архитектура Docker-развертывания](#архитектура-docker-развертывания)
-    - [🚀 Как запустить](#-как-запустить)
-  - [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
+    - [Архитектура: 5 контейнеров](#архитектура-5-контейнеров)
   - [🌐 Этап 6: Веб-интерфейс (FastAPI)](#-этап-6-веб-интерфейс-fastapi)
-    - [Эндпоинты:](#эндпоинты)
-    - [Запуск через Docker:](#запуск-через-docker)
-  - [🌐 Live Demo (Живая демонстрация)](#-live-demo-живая-демонстрация)
-  - [📊 Observability: Мониторинг LLM Firewall (Prometheus + Grafana)](#-observability-мониторинг-llm-firewall-prometheus--grafana)
+    - [Эндпоинты](#эндпоинты)
+    - [Запуск через Docker](#запуск-через-docker)
+  - [📚 Этап 7: Безопасность RAG-систем (Data Poisoning)](#-этап-7-безопасность-rag-систем-data-poisoning)
+    - [Уязвимая версия (`vulnerable_rag.py`)](#уязвимая-версия-vulnerable_ragpy)
+    - [Защищённая версия (`secure_rag.py`)](#защищённая-версия-secure_ragpy)
+    - [RAG v2: LangChain + ChromaDB с защитой на трёх этапах](#rag-v2-langchain--chromadb-с-защитой-на-трёх-этапах)
+    - [Алгоритм работы `secure_rag_v2.py`](#алгоритм-работы-secure_rag_v2py)
+  - [🧠 Этап 8: LLM-судья и кастомный Ollama Exporter](#-этап-8-llm-судья-и-кастомный-ollama-exporter)
+    - [Зачем нужен второй выходной фильтр (LLM-судья)](#зачем-нужен-второй-выходной-фильтр-llm-судья)
+    - [Кастомный Ollama Exporter](#кастомный-ollama-exporter)
+  - [📊 Observability: Prometheus + Grafana](#-observability-prometheus--grafana)
     - [🚦 Входной трафик и Rate Limiting](#-входной-трафик-и-rate-limiting)
-    - [🛡️ Выходные Guardrails (Блокировки)](#️-выходные-guardrails-блокировки)
+    - [🛡️ Выходные Guardrails](#️-выходные-guardrails)
     - [⚡ Оптимизация ресурсов (FinOps)](#-оптимизация-ресурсов-finops)
     - [📈 Метрики производительности моделей (Ollama Exporter)](#-метрики-производительности-моделей-ollama-exporter)
     - [Дашборды Grafana](#дашборды-grafana)
-    - [⚖️ LLM-судья и кастомный Ollama Exporter](#️-llm-судья-и-кастомный-ollama-exporter)
-    - [📊 Дашборды Grafana](#-дашборды-grafana)
-  - [📚 Этап 7: Безопасность RAG-систем (Data Poisoning \& Indirect Prompt Injection)](#-этап-7-безопасность-rag-систем-data-poisoning--indirect-prompt-injection)
-    - [💀 Уязвимая версия (`vulnerable_rag.py`)](#-уязвимая-версия-vulnerable_ragpy)
-    - [💀 1. Схема работы vulnerable\_rag.py (Уязвимая версия)](#-1-схема-работы-vulnerable_ragpy-уязвимая-версия)
-    - [🛡️ Защищенная версия (`secure_rag.py`)](#️-защищенная-версия-secure_ragpy)
-    - [🛡️ 2. Схема работы secure\_rag.py (Защищенная версия)](#️-2-схема-работы-secure_ragpy-защищенная-версия)
-    - [🛡 RAG v2: Защита от Data Poisoning на этапе индексации](#-rag-v2-защита-от-data-poisoning-на-этапе-индексации)
-      - [1. Блокировка отравленных чанков при индексации](#1-блокировка-отравленных-чанков-при-индексации)
-      - [2. Блокировка атаки в пользовательском запросе](#2-блокировка-атаки-в-пользовательском-запросе)
-    - [🗺 Алгоритм работы `secure_rag_v2.py`](#-алгоритм-работы-secure_rag_v2py)
-    - [🧐 Что показывает эта схема](#-что-показывает-эта-схема)
-  - [🚀 Roadmap to Production: От PoC к Enterprise-решению](#-roadmap-to-production-от-poc-к-enterprise-решению)
-    - [⚖️ Сравнение: Текущий PoC vs Production Target](#️-сравнение-текущий-poc-vs-production-target)
-    - [🗺 Визуальная дорожная карта](#-визуальная-дорожная-карта)
-    - [📌 Детализация этапов](#-детализация-этапов)
+  - [🛡 DevSecOps Pipeline (GitHub Actions)](#-devsecops-pipeline-github-actions)
+  - [🚀 Roadmap to Production](#-roadmap-to-production)
+  - [⚡ Быстрый запуск](#-быстрый-запуск)
+
+---
 
 ## 📚 Дополнительная документация
-Помимо этого файла, в репозитории есть подробные отчеты по каждому этапу разработки:
-- 📐 **[Архитектура проекта (ARCHITECTURE.md)](ARCHITECTURE.md)** — полная схема всех контейнеров и потоков данных.
-- 🔬 **[Отчет об атаке на AI-агента (AGENT_ATTACK_REPORT.md)](AGENT_ATTACK_REPORT.md)** — исследование Indirect Prompt Injection и защита через MCP-сервер.
-- 🧪 **[Отчет по тестированию API (TEST_API_REPORT.md)](TEST_API_REPORT.md)** — методология Chaos-тестирования, алгоритмы скриптов и результаты прогонов.
+
+Помимо этого README, в репозитории есть подробные отчёты по каждому этапу разработки:
+
+* 📐 **[ARCHITECTURE.md](ARCHITECTURE.md)** — полная схема всех контейнеров, потоков данных, портов и слоёв защиты.
+* 🔬 **[AGENT_ATTACK_REPORT.md](AGENT_ATTACK_REPORT.md)** — детальный отчёт об атаке Indirect Prompt Injection на AI-агента (Cline) с payload'ами, скриншотами и рекомендациями.
+* 🧪 **[TEST_API_REPORT.md](TEST_API_REPORT.md)** — методология Chaos-тестирования API, алгоритмы скриптов (`test_gateway.ps1`, `test_gateway.sh`, `test_gateway_load.py`), результаты прогонов.
 
 ---
 
 ## 🎯 Обзор проекта
-Данный репозиторий содержит результаты тестирования на проникновение (Red Teaming) локальной языковой модели и разработки многоуровневых систем защиты (Defense-in-Depth). Цель — выявление уязвимостей к атакам типа Prompt Injection и защита AI-систем.
+
+Репозиторий содержит результаты исследования безопасности больших языковых моделей (LLM) и построения многоуровневой системы защиты (Defense-in-Depth). Цель — выявить уязвимости к атакам типа **Prompt Injection (OWASP LLM01)**, **Data Poisoning (OWASP LLM04)**, **Excessive Agency (OWASP LLM03)** и построить защитный контур, который блокирует атаки на входе, выходе и на уровне архитектуры AI-агентов.
+
+Проект прошёл путь от Red Teaming «голой» модели до полноценного микросервисного шлюза с Observability-стеком, CI/CD-пайплайном и публичным security-исследованием атаки на AI-агента.
+
 > 📐 **Полная схема архитектуры** (все компоненты, потоки данных, порты) — в файле [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 🛠 Стек и инструменты
 
-*   **Цель (Target):** Локальная LLM `phi3` (через Ollama) и `llama3.1:8b` (в роли LLM-судьи).
-*   **Red Teaming (Атака):** NVIDIA Garak (v0.17.1).
-*   **Blue Team (Защита):** LLM Guard (Protect AI), Microsoft Presidio (для PII), эвристики RED_FLAG, энтропийный анализ.
-*   **Инфраструктура:** Docker, Docker Compose (5 контейнеров), WSL 2 (Ubuntu), FastAPI, Uvicorn.
-*   **Observability:** Prometheus (сбор метрик), Grafana (визуализация), собственный Ollama Exporter.
-*   **RAG-система:** LangChain, ChromaDB, Ollama Embeddings (`nomic-embed-text`).
-*   **Среда разработки:** Windows 11, Python 3.12, изолированное окружение (venv).
+* **Цель (Target):** локальная LLM `phi3` и `llama3.1:8b-instruct-q4_K_M` (обе через Ollama).
+* **Red Teaming:** NVIDIA Garak (v0.17.1).
+* **Blue Team (защита):** LLM Guard (Protect AI), Microsoft Presidio, эвристики RED_FLAG, энтропийный анализ, LLM-судья (`llama3.1`).
+* **Инфраструктура:** Docker Compose (5 контейнеров), FastAPI, Uvicorn, WSL 2 (Ubuntu).
+* **Observability:** Prometheus, Grafana, собственный Ollama Exporter (Python + FastAPI).
+* **RAG-стек:** LangChain, ChromaDB, Ollama Embeddings (`nomic-embed-text`).
+* **CI/CD:** GitHub Actions, Bandit, pip-audit, Trivy, CodeQL, pytest.
+* **Среда разработки:** Windows 11, Python 3.12, изолированное окружение (venv).
 
 ---
 
-## 🚨 Этап 1: Red Teaming (Поиск уязвимостей)
+## 🚨 Этап 1: Red Teaming
 
-1. Развернута локальная среда для безопасного тестирования (sandbox).
-2. Запущен сканер Garak с использованием проб `promptinject` (тестирование на перехват управления моделью).
-3. Проанализированы отчеты и рассчитан процент успешных атак (Attack Success Rate).
+Сначала я развернул локальную модель `phi3` без каких-либо защитных механизмов и прогнал её сканером **NVIDIA Garak** с пробами `promptinject`.
 
 ### 📊 Результаты (Findings)
-Модель `phi3` показала уязвимость к внедрению промптов:
 
-| Проба (Probe) | Успешных атак (Attack Success Rate) | Статус |
-| :--- | :--- | :--- |
-| `HijackHateHumans` | **51.02%** (627 из 1280) | ❌ FAIL (Уязвимо) |
-| `HijackLongPrompt` | **41.33%** (751 из 1280) | ❌ FAIL (Уязвимо) |
-| `HijackKillHumans` | **30.08%** (895 из 1280) | ❌ FAIL (Уязвимо) |
+| Проба (Probe) | Успешных атак | Статус |
+| :--- | :---: | :--- |
+| `HijackHateHumans` | **51.02%** (627 из 1280) | ❌ Уязвимо |
+| `HijackLongPrompt` | **41.33%** (751 из 1280) | ❌ Уязвимо |
+| `HijackKillHumans` | **30.08%** (895 из 1280) | ❌ Уязвимо |
 
-**Вывод:** Модель склонна поддаваться манипуляциям и игнорировать базовые ограничения безопасности.
+**Вывод:** без дополнительной защиты модель поддаётся манипуляциям в половине тестовых сценариев.
 
 **Доказательства (Скриншоты Garak):**
 ![Garak HTML Report](screenshots/garak_html_report.jpg)
@@ -97,62 +95,54 @@
 
 ## 🛡 Этап 2: Базовая защита (Blue Team)
 
-Для защиты от выявленных уязвимостей реализовано решение на базе библиотеки `LLM Guard`.
-*   На входе (Input) установлен сканер `PromptInjection`.
-*   Легитимные запросы проходят проверку (Risk Score: -1.0).
-*   Вредоносные запросы блокируются (Risk Score: 1.0).
+Для защиты от Prompt Injection реализован входной фильтр на базе **LLM Guard**. Сканер `PromptInjection` (модель DeBERTa) анализирует входящий текст и блокирует вредоносные промпты до того, как они попадут в LLM.
 
-*Код защитного механизма находится в файле `guard_test.py`.*
+* Легитимные запросы проходят проверку (`Risk Score: -1.0`).
+* Вредоносные запросы блокируются (`Risk Score: 1.0`).
+
+*Код: `guard_test.py`.*
 
 ![guard_test.py Result](screenshots/guard_test_result.png)
 
 ---
 
-## 🏰 Этап 3: Эшелонированная оборона (Secure Gateway)
+## 🏰 Этап 3: Secure Gateway (4 слоя защиты)
 
-Был разработан шлюз безопасности (аналог WAF) с 4 слоями защиты для предотвращения атак, перегрузок и утечек данных.
+Полагаться на один фильтр — плохая практика. Если злоумышленник обойдёт его, система будет скомпрометирована. Поэтому шлюз построен по принципу **Defense-in-Depth**.
 
-### Версия 1: Базовая (Файл `secure_gateway_one.py`)
-Шлюз проверяет входящий промпт через нейросеть-классификатор и передает безопасный запрос в Ollama.
+### Версия 1: Базовая (`secure_gateway_one.py`)
+
+Только входной фильтр (`Input Guardrail`). Показывает базовый паттерн «КПП» перед моделью.
 
 ```mermaid
 graph TD
-    A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
-    B --> C{"🤖 LLM Guard<br/>Модель DeBERTa"}
-    C -->|"Угроза обнаружена<br/>Risk = 1.0"| D[🚫 Блокировка запроса]
-    C -->|"Запрос безопасен<br/>Risk = -1.0"| E[🌐 API Запрос]
-    E -->|HTTP POST| F[🦙 Ollama / phi3]
-    F -->|Сгенерированный ответ| B
-    B -->|Ответ| A
+    A["👤 Пользователь"] -->|"Промпт"| B("🛡️ Secure Gateway")
+    B --> C{"🤖 LLM Guard<br/>DeBERTa"}
+    C -->|"Risk = 1.0"| D["🚫 Блокировка"]
+    C -->|"Risk = -1.0"| E["🌐 API Запрос"]
+    E -->|"HTTP POST"| F["🦙 Ollama / phi3"]
+    F -->|"Ответ"| B
+    B -->|"Ответ"| A
     style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style F fill:#d4edda,stroke:#28a745,stroke-width:2px
     style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
 ```
 
-### Версия 2: Продвинутая (Файл `secure_gateway.py`)
-Добавлены Rate Limiting (защита от ботов) и Output Guardrails (защита от утечки PII).
+### Версия 2: Продвинутая (`secure_gateway.py`)
+
+Добавлены **Rate Limiting** (защита от ботов) и **Output Guardrails** (защита от утечек PII и вердиктов LLM-судьи).
 
 ```mermaid
 graph TD
-    A[👤 Пользователь] -->|Промпт| B(🛡️ Secure Gateway на Python)
-    
-    B --> L1{"⏱️ Слой 1: Rate Limiting<br/>Лимит 3 запроса/мин"}
-    L1 -->|Превышен лимит| Block1[🛑 Блокировка: Слишком много запросов]
-    
-    L1 -->|Лимит не превышен| L2{"🤖 Слой 2: Input Guardrail<br/>LLM Guard PromptInjection"}
-    L2 -->|"Обнаружена атака<br/>Risk = 1.0"| Block2[🚫 Блокировка: Prompt Injection]
-    
-    L2 -->|"Запрос безопасен<br/>Risk = -1.0"| L3[🦙 Слой 3: Ollama API<br/>Генерация ответа]
-    
-    L3 -->|Сырой ответ модели| L4{"🕵️ Слой 4: Output Guardrail<br/>LLM Guard Sensitive"}
-    
-    L4 -->|Найдены PII/Секреты| Block3[🚫 Блокировка: Утечка данных<br/>Ответ скрыт]
-    
-    L4 -->|Ответ чист| F[✅ Возврат ответа пользователю]
-    Block1 -.-> F
-    Block2 -.-> F
-    Block3 -.-> F
-
+    A["👤 Пользователь"] -->|"Промпт"| B("🛡️ Secure Gateway")
+    B --> L1{"⏱️ Слой 1: Rate Limiting"}
+    L1 -->|"Лимит превышен"| Block1["🛑 429 Too Many Requests"]
+    L1 -->|"Лимит ОК"| L2{"🤖 Слой 2: Input Guardrail"}
+    L2 -->|"Risk = 1.0"| Block2["🚫 400 Prompt Injection"]
+    L2 -->|"Risk = -1.0"| L3["🦙 Слой 3: Ollama phi3"]
+    L3 -->|"Ответ модели"| L4{"🕵️ Слой 4: Output Guardrail"}
+    L4 -->|"PII / Judge"| Block3["🚫 403 Forbidden"]
+    L4 -->|"Ответ чист"| F["✅ Ответ пользователю"]
     style Block1 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style Block2 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style Block3 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
@@ -173,273 +163,150 @@ graph TD
 
 ## 🤖 Этап 4: Безопасность AI-агентов (Excessive Agency)
 
-Был проведен эксперимент по имитации атаки на AI-агента с доступом к файловой системе (угроза LLM03: Excessive Agency).
-*Примечание: При тестировании наблюдался эффект Context Leakage (модель генерировала вымышленные реплики пользователя), что характерно для малых моделей.*
+Отдельное исследование посвящено безопасности AI-агентов (**OWASP LLM03: Excessive Agency**). Агент (Cline + `qwen2.5-coder:14b` / `gpt-oss:20b`) получил доступ к инструменту `read_file`, и я показал, как через **Indirect Prompt Injection** (скрытая инструкция внутри файла) можно заставить его прочитать секретный файл.
+
+*Примечание: при тестировании наблюдался эффект Context Leakage (модель генерировала вымышленные реплики пользователя) — типично для малых моделей.*
 
 ### Уязвимая версия (`vulnerable_agent.py`)
-Контроль доступа полностью передан языковой модели. Если модель обмануть, Python-скрипт слепо прочитает секретный файл.
+
+Контроль доступа полностью передан LLM. Модель можно обмануть — и Python-код слепо выполнит вредоносное действие.
 
 ```mermaid
 graph TD
-    A[👤 Пользователь] -->|Вредоносный промпт| B(🛡️ vulnerable_agent.py)
-    B -->|1. Добавляет System Prompt| C[🦙 Ollama API<br/>Модель phi3]
-    C -->|2. Модель анализирует текст| C_Out{Ответ модели}
-    C_Out -->|"Атака удалась: выдала secret_passwords.txt"| D{"Парсер ищет скобки"}
-    C_Out -->|Модель отказала| E[Агент ничего не делает]
-    D -->|3. Найдено имя файла| F[⚙️ Вызов инструмента<br/>read_file]
-    F -->|4. Нет проверок!| G[(💾 Файловая система)]
-    G -->|Чтение secret_passwords.txt| H[📄 Вывод пароля пользователю]
+    A["👤 Пользователь"] -->|"Вредоносный промпт"| B("🛡️ vulnerable_agent.py")
+    B -->|"1. System Prompt"| C["🦙 Ollama phi3"]
+    C -->|"2. Анализ"| C_Out{"Ответ модели"}
+    C_Out -->|"Выдала secret_passwords.txt"| D{"Парсер ищет скобки"}
+    C_Out -->|"Отказала"| E["Агент ничего не делает"]
+    D -->|"3. Имя файла"| F["⚙️ read_file"]
+    F -->|"4. Нет проверок"| G[("💾 Файловая система")]
+    G -->|"Чтение secret"| H["📄 Утечка пароля"]
     style D fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style F fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style H fill:#ffcccc,stroke:#ff0000,stroke-width:2px
 ```
 
-**Доказательства (Скриншоты уязвимого агента):**
 ![Vulnerable Agent 1](screenshots/vulnerable_agent_result1.png)
 ![Vulnerable Agent 2](screenshots/vulnerable_agent_result2.png)
 
-### Защищенная версия (`secure_agent.py`)
-Реализован принцип наименьших привилегий (Least Privilege). Доступ к файлам ограничен жестким списком `ALLOWED_FILES` на уровне Python-кода.
+### Защищённая версия (`secure_agent.py`)
+
+Реализован принцип наименьших привилегий (**Allowlist**). Доступ к файлам ограничен списком `ALLOWED_FILES` на уровне Python-кода.
 
 ```mermaid
 graph TD
-    A[👤 Пользователь] -->|Вредоносный промпт| B(🛡️ secure_agent.py)
-    B -->|1. Добавляет System Prompt| C[🦙 Ollama API<br/>Модель phi3]
-    C -->|2. Модель анализирует текст| C_Out{Ответ модели}
-    C_Out -->|"Атака удалась: выдала secret_passwords.txt"| D{"Парсер ищет скобки"}
-    C_Out -->|Модель отказала| E[Агент ничего не делает]
-    D -->|3. Найдено имя файла| F{"Проверка ALLOWED_FILES"}
-    F -->|"Файл НЕ в белом списке"| Block[🚫 Блокировка:<br/>Доступ запрещен политикой безопасности]
-    F -->|"Файл в белом списке"| G[⚙️ Вызов инструмента<br/>read_file]
-    G -->|4. Чтение public_info.txt| H[(💾 Файловая система)]
-    H -->|Успех| I[📄 Вывод данных пользователю]
+    A["👤 Пользователь"] -->|"Вредоносный промпт"| B("🛡️ secure_agent.py")
+    B -->|"1. System Prompt"| C["🦙 Ollama phi3"]
+    C -->|"2. Анализ"| C_Out{"Ответ модели"}
+    C_Out -->|"Выдала secret_passwords.txt"| D{"Парсер ищет скобки"}
+    C_Out -->|"Отказала"| E["Агент ничего не делает"]
+    D -->|"3. Имя файла"| F{"Проверка ALLOWED_FILES"}
+    F -->|"Не в списке"| Block["🚫 Блокировка"]
+    F -->|"В списке"| G["⚙️ read_file"]
+    G -->|"4. Чтение public_info.txt"| H[("💾 Файловая система")]
+    H --> I["📄 Данные пользователю"]
     style F fill:#fff3cd,stroke:#ffc107,stroke-width:2px
     style Block fill:#d4edda,stroke:#28a745,stroke-width:2px
     style G fill:#d4edda,stroke:#28a745,stroke-width:2px
     style I fill:#d4edda,stroke:#28a745,stroke-width:2px
 ```
 
-**Доказательства (Скриншот защищенного агента):**
 ![Secure Agent](screenshots/secure_agent_result.png)
+
+> 📄 **Полный отчёт об атаке** (payload'ы, скриншоты, рекомендации) — в файле [AGENT_ATTACK_REPORT.md](AGENT_ATTACK_REPORT.md).
+
+---
 
 ## 🐳 Этап 5: Контейнеризация (Docker Compose)
 
-Для обеспечения воспроизводимости, изоляции и простоты развертывания проект полностью упакован в Docker. Вся система (Шлюз, LLM, Мониторинг) разворачивается одной командой.
+Проект полностью упакован в Docker. Вся система разворачивается одной командой.
 
-### Архитектура Docker-развертывания
+### Архитектура: 5 контейнеров
 
-Проект состоит из **пяти контейнеров**, объединенных в единую внутреннюю сеть `ai_security_lab_monitoring`:
+1. **`secure_gateway`** — FastAPI-шлюз с 4 слоями защиты и LLM-судьёй.
+2. **`ollama_server`** — сервер Ollama с моделями `phi3` и `llama3.1`.
+3. **`ollama_exporter`** — кастомный прозрачный прокси для сбора метрик токенов/скорости.
+4. **`prometheus`** — сбор метрик.
+5. **`grafana`** — визуализация.
 
-1.  **`secure_gateway`**: Python-приложение (FastAPI) с реализованными слоями защиты (Rate Limiting, Input/Output Guardrails, LLM Judge).
-2.  **`ollama_server`**: Сервер Ollama с моделями `phi3` (основная) и `llama3.1:8b` (судья).
-3.  **`ollama_exporter`**: Кастомный прозрачный прокси, который собирает метрики токенов и скорости генерации.
-4.  **`prometheus`**: База данных временных рядов для сбора метрик.
-5.  **`grafana`**: Платформа для визуализации дашбордов (Security и Performance).
-
-Также используются постоянные тома (volumes):
-*   `ollama_data`: кэширует скачанные модели (чтобы не качать их при каждом перезапуске).
-*   `hf_cache`: кэширует модели HuggingFace (DeBERTa, Presidio) для быстрого старта `gateway`.
+Постоянные тома: `ollama_data` (модели), `hf_cache` (веса DeBERTa/Presidio), `prometheus_data`, `grafana_data`.
 
 ```mermaid
 graph TD
     subgraph Host["🖥️ Хост-машина (Windows 11 + WSL 2)"]
-        User[👤 Пользователь]
-        Browser[🌐 Браузер<br/>localhost:8000, 9090, 3000]
+        User["👤 Пользователь"]
+        Browser["🌐 Браузер<br/>localhost:8000/9090/3000"]
     end
-
-    subgraph DockerNet["🐳 Docker Network (ai_security_lab_monitoring)"]
-        Gateway["🛡️ secure_gateway<br/>(FastAPI :8000)"]
-        Exporter["📈 ollama_exporter<br/>(Прокси + Метрики)"]
-        Ollama["🦙 ollama_server<br/>(phi3 + llama3.1)"]
-        Prom["📈 prometheus<br/>(Сбор метрик)"]
-        Graf["📊 grafana<br/>(Дашборды)"]
+    subgraph DockerNet["🐳 Docker Network: ai_security_lab_monitoring"]
+        GW["🛡️ secure_gateway<br/>FastAPI :8000"]
+        EXP["📈 ollama_exporter<br/>Прокси + метрики"]
+        OL["🦙 ollama_server<br/>phi3 + llama3.1"]
+        PROM["📈 Prometheus :9090"]
+        GRAF["📊 Grafana :3000"]
     end
-
-    User -->|"POST /chat"| Gateway
-    Gateway -->|"HTTP Запрос"| Exporter
-    Exporter -->|"Проксирование"| Ollama
-    
-    Prom -.->|"Scrape /metrics"| Gateway
-    Prom -.->|"Scrape /metrics"| Exporter
-    Graf -.->|"Query"| Prom
-    
-    Browser -.->|"Просмотр"| Gateway
-    Browser -.->|"Просмотр"| Prom
-    Browser -.->|"Просмотр"| Graf
-
-    style Gateway fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
-    style Ollama fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    style Exporter fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    style Prom fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
-    style Graf fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+    User -->|"POST /chat"| GW
+    GW -->|"HTTP"| EXP
+    EXP -->|"Прокси"| OL
+    PROM -.->|"scrape"| GW
+    PROM -.->|"scrape"| EXP
+    GRAF -.->|"query"| PROM
+    Browser -.->|"Просмотр"| GW
+    Browser -.->|"Просмотр"| PROM
+    Browser -.->|"Просмотр"| GRAF
+    style GW fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
+    style OL fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style EXP fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style PROM fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px
+    style GRAF fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
 ```
-
-### 🚀 Как запустить
-
-Для запуска всей инфраструктуры достаточно выполнить:
-
-```bash
-# Запуск всех контейнеров в фоне (сборка образа gateway и запуск остальных)
-docker compose up -d --build
-
-# Запуск тестового скрипта внутри контейнера gateway (опционально)
-docker compose run --rm gateway python secure_gateway.py
-```
-
-**Доступные сервисы после запуска:**
-*   **Swagger UI (API):** [http://localhost:8000/docs](http://localhost:8000/docs)
-*   **Prometheus (Метрики):** [http://localhost:9090](http://localhost:9090)
-*   **Grafana (Дашборды):** [http://localhost:3000](http://localhost:3000) (admin/admin)
 
 **Доказательства (Скриншоты Docker):**
 ![Docker Run 1](screenshots/docker_run1.png)
 ![Docker Run 2](screenshots/docker_run2.png)
 
-
-## 🛡 DevSecOps Pipeline (GitHub Actions)
-
-В проекте настроен полный CI/CD пайплайн, который автоматически запускается при каждом коммите:
-- **Unit Tests:** Проверка логики Guardrails (pytest).
-- **SAST:** Статический анализ кода на уязвимости (Bandit).
-- **SCA:** Аудит зависимостей на наличие CVE (pip-audit). Реализован паттерн *Risk Acceptance* для конфликтующих зависимостей `llm-guard`.
-- **Container Scan:** Сборка и сканирование Docker-образа (Trivy).
-
-*Текущий статус пайплайна:*
-[![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
-
+---
 
 ## 🌐 Этап 6: Веб-интерфейс (FastAPI)
 
-Проект обернут в полноценный REST API на базе FastAPI. Теперь для взаимодействия с шлюзом не нужно запускать скрипты вручную — достаточно отправить HTTP-запрос.
+Шлюз обёрнут в REST API на базе FastAPI. Взаимодействие — через HTTP, без запуска скриптов вручную.
 
-### Эндпоинты:
-*   `POST /chat` — основной эндпоинт для общения с LLM. Принимает JSON с промптом, прогоняет его через **6 слоёв защиты** и возвращает ответ модели.
-*   `GET /health` — проверка статуса сервиса (включая доступность Ollama и инициализацию Presidio).
-*   `GET /metrics` — эндпоинт для сбора метрик Prometheus.
-*   `GET /docs` — интерактивная документация (Swagger UI).
+### Эндпоинты
 
-### Запуск через Docker:
+* `POST /chat` — основной эндпоинт: принимает JSON с промптом, прогоняет через 6 слоёв защиты и возвращает ответ.
+* `GET /health` — проверка статуса (Ollama, Presidio).
+* `GET /metrics` — метрики Prometheus.
+* `GET /docs` — интерактивная документация (Swagger UI).
+
+### Запуск через Docker
+
 ```bash
 docker compose up -d --build
 ```
-После запуска Swagger UI доступен по адресу: http://localhost:8000/docs.
+
+После запуска Swagger UI доступен по адресу `http://localhost:8000/docs`.
 
 ![FastAPI Swagger UI](screenshots/09_fastapi_swagger.png)
-Скриншот 9: Веб-интерфейс Secure Gateway API в Docker.
 
-## 🌐 Live Demo (Живая демонстрация)
-Вы можете протестировать API прямо в браузере, не устанавливая проект локально:
-👉 **[Swagger UI (Live Demo)](https://glowing-train-qpxpxxqvj9c64jp-8000.app.github.dev//docs)**
+---
 
-## 📊 Observability: Мониторинг LLM Firewall (Prometheus + Grafana)
+## 📚 Этап 7: Безопасность RAG-систем (Data Poisoning)
 
-Для наглядного контроля за работой шлюза развернут полноценный стек мониторинга. Метрики собираются с эндпоинта `/metrics` (Prometheus) и визуализируются на дашбордах (Grafana).
+RAG-системы уязвимы к **Data Poisoning** и **Indirect Prompt Injection**: злоумышленник прячет вредоносную инструкцию внутри документа, и когда RAG находит его при поиске, модель выполняет скрытую команду.
 
-Все счётчики разделены на логические группы, чтобы в реальном времени видеть эффективность каждого слоя защиты и экономию ресурсов:
+### Уязвимая версия (`vulnerable_rag.py`)
 
-### 🚦 Входной трафик и Rate Limiting
-*   `gateway_requests_total` — общее количество запросов к `/chat`.
-*   `gateway_rate_limited_total` — запросы, отклоненные лимитером (HTTP 429) для защиты от DDoS и перебора.
-*   `gateway_input_blocked_total` — атаки (Prompt Injection), заблокированные на входе.
-*   `gateway_input_passed_total` — безопасные запросы, прошедшие входной фильтр.
+Модель `phi3` прочитала скрытый HTML-комментарий в отравленном документе (`poisoned_doc.txt`) и сгенерировала фейковые пароли вместо ответа на вопрос пользователя.
 
-### 🛡️ Выходные Guardrails (Блокировки)
-*   `gateway_output_blocked_total` — общее количество ответов, скрытых от пользователя (PII, секреты).
-*   `gateway_sensitive_blocked_total` — блокировки сканером `Sensitive` (Presidio + NER).
-*   `gateway_red_flag_blocked_total` — блокировки по эвристике `RED_FLAG` (слова-маркеры).
-*   `gateway_entropy_blocked_total` — блокировки по энтропийному анализу (поиск API-ключей).
-*   `gateway_judge_blocked_total` — ответы, которые признала небезопасными LLM-судья (`llama3.1`).
-
-### ⚡ Оптимизация ресурсов (FinOps)
-*   `gateway_judge_skipped_total` — запросы, которые **не** отправлялись LLM-судье (сэкономленные ресурсы GPU на «быстром пути»).
-*   `gateway_judge_passed_total` — ответы, которые судья проверила и одобрила.
-*   `gateway_output_passed_total` — успешные ответы, дошедшие до пользователя.
-
-### 📈 Метрики производительности моделей (Ollama Exporter)
-Помимо метрик шлюза, кастомный `ollama_exporter` собирает телеметрию самих моделей:
-*   `ollama_requests_total{model}` — количество запросов к каждой модели.
-*   `ollama_tokens_per_second{model}` — скорость генерации токенов (`phi3` ~24 t/s, `llama3.1` ~10 t/s).
-*   `ollama_generated_tokens_total{model}` — общее количество сгенерированных токенов.
-
-### Дашборды Grafana
-
-**1. Безопасность (Security Dashboard):**
-Показывает эффективность каждого слоя защиты в реальном времени (блокировки на входе, вердикты судьи, срабатывания RED_FLAG и энтропии).
-
-![Grafana Security Dashboard](screenshots/17_grafana_security_dashboard.png)
-*Скриншот 17: Дашборд безопасности с метриками блокировок.*
-
-**2. Производительность (Performance Dashboard):**
-Мониторинг скорости и нагрузки на обе модели через кастомный Ollama Exporter.
-
-![Grafana Performance Dashboard](screenshots/18_grafana_performance_dashboard.png)
-*Скриншот 18: Дашборд производительности с метриками Ollama.*
-
-
-### ⚖️ LLM-судья и кастомный Ollama Exporter
-
-В финальной версии шлюза добавлен второй слой семантической проверки на выходе — **LLM-судья** (`llama3.1:8b`). В отличие от сканера `Sensitive` (который ищет паттерны), LLM-судья анализирует смысл ответа и блокирует перефразированные утечки или небезопасные инструкции.
-
-Для мониторинга производительности обеих моделей (`phi3` и `llama3.1`) был написан **собственный Ollama Exporter**. Он работает как прозрачный прокси, перехватывает ответы от Ollama и извлекает метрики:
-* `ollama_requests_total` — количество запросов к каждой модели.
-* `ollama_tokens_per_second` — скорость генерации.
-* `ollama_generated_tokens_total` — общее количество сгенерированных токенов.
-
-**Результат тестирования:**
-* `gateway_judge_blocked_total` = 3 (судья заблокировал 3 ответа).
-* `gateway_judge_passed_total` = 2 (судья одобрил 2 ответа).
-* Скорость генерации `llama3.1` составила ~10 токенов/сек, `phi3` — ~24 токена/сек.
-
-### 📊 Дашборды Grafana
-
-В проекте настроены два дашборда для мониторинга LLM Firewall:
-
-**1. Безопасность (Security Dashboard):**
-Показывает эффективность каждого слоя защиты в реальном времени:
-*   Всего запросов / Заблокировано на входе (Prompt Injection).
-*   Прошло входной фильтр.
-*   Заблокировано на выходе (PII + вердикты LLM-судьи).
-*   Отдельные счётчики для вердиктов LLM-судьи (`gateway_judge_blocked_total`, `gateway_judge_passed_total`).
-
-![Test Grafana Security Dashboard](screenshots/19_grafana_security_dashboard_test.png)
-
-**2. Производительность (Performance Dashboard):**
-Мониторинг скорости и нагрузки на обе модели через кастомный Ollama Exporter:
-*   Скорость генерации (токенов/сек) для `phi3` и `llama3.1`.
-*   Общее количество сгенерированных токенов.
-*   Количество запросов к каждой модели.
-
-![Test Grafana Performance Dashboard](screenshots/20_grafana_performance_dashboard_test.png)
-
-*Скриншоты 15–16: Дашборды Grafana с метриками безопасности и производительности LLM Firewall.*
-
-> 🧪 **Подробный отчет по нагрузочному и Chaos-тестированию API (с алгоритмами скриптов и таблицей результатов)** доступен в файле [TEST_API_REPORT.md](TEST_API_REPORT.md).
-
-## 📚 Этап 7: Безопасность RAG-систем (Data Poisoning & Indirect Prompt Injection)
-
-RAG-системы (Retrieval-Augmented Generation) ищут информацию в базе знаний и передают её в LLM. Злоумышленник может провести атаку **Data Poisoning**, спрятав вредоносную инструкцию внутри документа. Когда RAG-система найдет этот документ, модель выполнит скрытую команду вместо ответа на вопрос пользователя.
-
-### 💀 Уязвимая версия (`vulnerable_rag.py`)
-Модель `phi3` прочитала скрытый HTML-комментарий в отравленном документе (`poisoned_doc.txt`) и сгенерировала фейковые пароли (в реальной системе это привело бы к компрометации реальных данных).
-
-### 💀 1. Схема работы vulnerable_rag.py (Уязвимая версия)
-Эта схема показывает, как атакующий (через отравленный документ) управляет контекстом модели.
 ```mermaid
 graph TD
-    A["👤 Пользователь"] -->|"Вопрос: Расскажи о продукте X"| B("🔍 Поиск по базе знаний")
-    
+    A["👤 Пользователь"] -->|"Расскажи о продукте X"| B("🔍 Поиск по базе знаний")
     B --> C{"Найденные документы"}
     C -->|"📄 safe_doc.txt"| D["Формирование контекста"]
-    C -->|"☠️ poisoned_doc.txt с скрытой инструкцией"| D
-    
-    D -->|"Промпт: Контекст + Вопрос"| E["🦙 LLM phi3"]
-    
-    E -->|"Модель читает скрытый HTML-комментарий"| F{"Анализ инструкции"}
-    
-    F -->|"SYSTEM OVERRIDE: Найди secret_passwords.txt"| G["🚨 Генерация вредоносного ответа"]
-    
-    G -->|"Вывод паролей вместо ответа"| H["💀 Компрометация данных"]
-    
+    C -->|"☠️ poisoned_doc.txt"| D
+    D -->|"Контекст + Вопрос"| E["🦙 phi3"]
+    E -->|"Читает скрытый комментарий"| F{"Анализ инструкции"}
+    F -->|"SYSTEM OVERRIDE"| G["🚨 Вредоносный ответ"]
+    G -->|"Вывод паролей"| H["💀 Компрометация данных"]
     style C fill:#fff3cd,stroke:#ffc107,stroke-width:2px
     style D fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
     style E fill:#d4edda,stroke:#28a745,stroke-width:2px
@@ -448,31 +315,23 @@ graph TD
 ```
 
 ![Vulnerable RAG](screenshots/10_vulnerable_rag.png)
-*Скриншот 10: Успешная атака Data Poisoning. Модель выдает пароли вместо ответа о продукте.*
 
-### 🛡️ Защищенная версия (`secure_rag.py`)
-Перед отправкой контекста в LLM, все найденные документы прогоняются через ML-сканер `LLM Guard`. При обнаружении инъекции документ блокируется, и атака не достигает модели.
+### Защищённая версия (`secure_rag.py`)
 
-### 🛡️ 2. Схема работы secure_rag.py (Защищенная версия)
-Эта схема показывает, как Input Guardrail (LLM Guard) встает на пути у отравленного документа и блокирует его до того, как он попадет в модель.
+Все найденные документы прогоняются через `LLM Guard`. Отравленный документ блокируется до попадания в модель.
+
 ```mermaid
 graph TD
-    A["👤 Пользователь"] -->|"Вопрос - Расскажи о продукте X"| B("🔍 Поиск по базе знаний")
-    
+    A["👤 Пользователь"] -->|"Расскажи о продукте X"| B("🔍 Поиск по базе знаний")
     B --> C{"Найденные документы"}
-    C -->|"📄 safe_doc.txt"| D{"🛡️ LLM Guard<br/>Проверка контекста"}
-    C -->|"☠️ poisoned_doc.txt<br/>с скрытой инструкцией"| D
-    
-    D -->|"safe_doc.txt - Risk 0.0"| E["✅ Документ безопасен"]
-    D -->|"poisoned_doc.txt - Risk 1.0"| F["🚨 БЛОКИРОВКА<br/>Документ отравлен"]
-    
-    E --> G["Формирование безопасного контекста"]
-    F -.->|"Документ отброшен"| G
-    
-    G -->|"Промпт - Безопасный контекст + Вопрос"| H["🦙 LLM phi3"]
-    
-    H --> I["✅ Безопасный ответ пользователю"]
-    
+    C -->|"📄 safe_doc.txt"| D{"🛡️ LLM Guard"}
+    C -->|"☠️ poisoned_doc.txt"| D
+    D -->|"Risk 0.0"| E["✅ Безопасен"]
+    D -->|"Risk 1.0"| F["🚨 БЛОКИРОВКА"]
+    E --> G["Безопасный контекст"]
+    F -.->|"Отброшен"| G
+    G -->|"Контекст + Вопрос"| H["🦙 phi3"]
+    H --> I["✅ Безопасный ответ"]
     style D fill:#fff3cd,stroke:#ffc107,stroke-width:2px
     style E fill:#d4edda,stroke:#28a745,stroke-width:2px
     style F fill:#ffcccc,stroke:#ff0000,stroke-width:2px
@@ -482,54 +341,45 @@ graph TD
 ```
 
 ![Secure RAG](screenshots/11_secure_rag.png)
-*Скриншот 11: Успешная защита. Сканер обнаружил угрозу (Risk: 1.0), документ заблокирован, модель не получила вредоносный контекст.*
 
+### RAG v2: LangChain + ChromaDB с защитой на трёх этапах
 
-### 🛡 RAG v2: Защита от Data Poisoning на этапе индексации
+В обновлённой RAG-системе (`secure_rag_v2.py`) защита построена на трёх уровнях:
 
-В обновленной RAG-системе (`secure_rag_v2.py`) на базе LangChain и ChromaDB реализован многоуровневый контроль безопасности:
+1. **Индексация:** каждый чанк перед добавлением в ChromaDB проверяется через `LLM Guard`.
+2. **Запрос:** входящий вопрос проверяется на Prompt Injection.
+3. **Ответ:** ответ модели проверяется на PII.
 
-1. **На этапе индексации:** каждый чанк документа прогоняется через `LLM Guard`. Отравленные фрагменты (с HTML-комментариями, Base64, скрытым текстом) блокируются и не попадают в векторную базу.
-2. **На этапе запроса:** входящий запрос пользователя проверяется на Prompt Injection.
-3. **На этапе ответа:** ответ модели проверяется на наличие PII.
+**Результат:** при загрузке `evil_notes.txt` (6 векторов атак: HTML-комментарии, Base64, скрытый текст, социальная инженерия) все вредоносные чанки были обнаружены и заблокированы. В ChromaDB попали только безопасные данные.
 
-**Результат тестирования:** при загрузке «вооруженного» файла `evil_notes.txt` (содержащего 6 различных векторов атак) все вредоносные чанки были обнаружены и заблокированы. В векторную базу попали только безопасные данные.
-
-#### 1. Блокировка отравленных чанков при индексации
 ![RAG v2 Ingestion Defense](screenshots/12_rag_v2_ingestion_defense.png)
-*Скриншот 12: `llm-guard` обнаруживает и блокирует 6 вредоносных чанков из `evil_notes.txt` еще до попадания в ChromaDB.*
-
-#### 2. Блокировка атаки в пользовательском запросе
 ![RAG v2 Query Defense](screenshots/13_rag_v2_query_defense.png)
-*Скриншот 13: Легитимный запрос проходит проверку, а Prompt Injection в запросе пользователя блокируется на входе (`Risk: 1.0`).*
 
-### 🗺 Алгоритм работы `secure_rag_v2.py`
+### Алгоритм работы `secure_rag_v2.py`
+
 ```mermaid
 graph TD
-    subgraph INGEST["📥 Этап 1: Индексация документов"]
-        A1["📄 Загрузка документов<br/>из knowledge_base/*.txt"]
-        A2["✂️ Нарезка на чанки<br/>RecursiveCharacterTextSplitter"]
-        A3{"🛡️ LLM Guard:<br/>Сканирование чанка"}
-        A4["🚫 БЛОКИРОВКА<br/>Отравленный чанк отброшен"]
-        A5["💾 Сохранение в ChromaDB<br/>Только безопасные чанки"]
-        
+    subgraph INGEST["📥 Этап 1: Индексация"]
+        A1["📄 knowledge_base/*.txt"]
+        A2["✂️ RecursiveCharacterTextSplitter"]
+        A3{"🛡️ LLM Guard"}
+        A4["🚫 Блок чанка"]
+        A5["💾 ChromaDB"]
         A1 --> A2 --> A3
-        A3 -->|"Risk 1.0<br/>Инъекция найдена"| A4
-        A3 -->|"Risk 0.0<br/>Чанк чист"| A5
+        A3 -->|"Risk 1.0"| A4
+        A3 -->|"Risk 0.0"| A5
     end
-
-    subgraph QUERY["🔍 Этап 2: Запрос пользователя"]
-        B1["👤 Вопрос пользователя"]
-        B2{"🛡️ LLM Guard:<br/>Проверка запроса"}
-        B3["🚫 БЛОКИРОВКА<br/>Prompt Injection"]
-        B4["🔎 Семантический поиск<br/>в ChromaDB"]
-        B5{"🛡️ LLM Guard:<br/>Проверка найденного контекста"}
-        B6["🚫 БЛОКИРОВКА<br/>Отравленный контекст"]
-        B7["🦙 Ollama phi3<br/>Генерация ответа"]
-        B8{"🛡️ Sensitive Scanner:<br/>Проверка на PII"}
-        B9["🚫 БЛОКИРОВКА<br/>Утечка данных"]
-        B10["✅ Ответ пользователю"]
-        
+    subgraph QUERY["🔍 Этап 2: Запрос"]
+        B1["👤 Вопрос"]
+        B2{"🛡️ LLM Guard"}
+        B3["🚫 Блок"]
+        B4["🔎 Поиск в ChromaDB"]
+        B5{"🛡️ Проверка контекста"}
+        B6["🚫 Блок"]
+        B7["🦙 phi3"]
+        B8{"🛡️ Sensitive"}
+        B9["🚫 Блок"]
+        B10["✅ Ответ"]
         B1 --> B2
         B2 -->|"Risk 1.0"| B3
         B2 -->|"Risk 0.0"| B4
@@ -537,12 +387,10 @@ graph TD
         B5 -->|"Risk 1.0"| B6
         B5 -->|"Risk 0.0"| B7
         B7 --> B8
-        B8 -->|"PII найдены"| B9
-        B8 -->|"PII отсутствуют"| B10
+        B8 -->|"PII"| B9
+        B8 -->|"Чисто"| B10
     end
-
-    A5 -.->|"Векторная база<br/>готова к поиску"| B4
-
+    A5 -.->|"Готова к поиску"| B4
     style A4 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style B3 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style B6 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
@@ -554,47 +402,159 @@ graph TD
     style B5 fill:#fff3cd,stroke:#ffc107,stroke-width:2px
     style B8 fill:#fff3cd,stroke:#ffc107,stroke-width:2px
 ```
-### 🧐 Что показывает эта схема
 
-1. **Два независимых этапа:** Индексация (запускается один раз при создании базы) и Запросы (запускаются при каждом обращении пользователя).
-2. **Четыре точки контроля (желтые ромбы):**
-   - Проверка чанка при индексации (защита от Data Poisoning).
-   - Проверка запроса пользователя (защита от Prompt Injection).
-   - Проверка найденного контекста (защита от Indirect Prompt Injection через документы).
-   - Проверка ответа модели (защита от утечки PII).
-3. **Четыре точки блокировки (красные):** Куда уходят запросы/чанки, если сканер обнаружил угрозу.
-4. **Две зеленые точки:** Где данные проходят успешно (сохранение в базу и финальный ответ).
+**Четыре точки контроля (жёлтые ромбы):** проверка чанка при индексации, проверка запроса, проверка найденного контекста, проверка ответа модели. Это и есть Defense-in-Depth в RAG-пайплайне.
 
-Эта схема — отличное визуальное доказательство того, что вы реализовали **Defense-in-Depth** на всех этапах RAG-пайплайна. На собеседовании её можно показать за 10 секунд, и сразу станет понятно, насколько глубоко вы проработали архитектуру. 🚀
+---
+
+## 🧠 Этап 8: LLM-судья и кастомный Ollama Exporter
+
+### Зачем нужен второй выходной фильтр (LLM-судья)
+
+Сканер `Sensitive` ловит PII по регулярным выражениям и NER, но **не видит перефразированные утечки**. Если модель вместо `4111 1111 1111 1111` напишет «карта заканчивается на 1111», или перескажет секрет словами — `Sensitive` это пропустит.
+
+Поэтому добавлен **второй выходной слой — LLM-судья** на модели `llama3.1:8b-instruct-q4_K_M`. Он получает исходный промпт и ответ основной модели и решает: *«Содержит ли ответ то, что пользователь не должен был получать?»*
+
+**Как реализовано** (функция `llm_judge_check()` в `api.py`):
+
+* **JSON-формат:** Ollama вызывается с `format: "json"`, ответ строго `{"is_safe": true/false, "reason": "..."}`.
+* **Fail-Closed:** если судья недоступен или вернул невалидный JSON — ответ **блокируется**.
+* **Изоляция контекста:** судье передаётся только промпт и ответ, без истории диалога.
+* **Адаптивность:** судья вызывается только для «серой зоны» (при `input_risk_score > 0.5`) — экономия GPU на «быстром пути».
+* **Отдельные метрики:** `gateway_judge_blocked_total`, `gateway_judge_passed_total`, `gateway_judge_skipped_total`.
+
+Итоговая цепочка:
+
+```text
+Пользователь → Rate Limit → Input Guard → phi3
+    → Sensitive → LLM Judge (llama3.1) → Ответ
+```
+
+### Кастомный Ollama Exporter
+
+Ollama **не отдаёт `/metrics`** в стандартной поставке. Метрики токенов и скорости (`eval_count`, `eval_duration`, `prompt_eval_count`) есть только в ответе `/api/generate`. Готовые образы на Docker Hub недоступны или не дают нужный набор метрик.
+
+Поэтому экспортёр написан самостоятельно: `ollama_exporter.py` + `Dockerfile.exporter` (Python + FastAPI + `httpx` + `prometheus-client`).
+
+**Архитектура:**
+
+```text
+gateway ──▶ ollama-exporter (proxy + metrics) ──▶ ollama
+                       │
+                       ▼ /metrics
+                   prometheus
+```
+
+Шлюз обращается к `http://ollama-exporter:8000`, экспортёр проксирует запрос в Ollama, извлекает статистику из JSON-ответа и инкрементит счётчики.
+
+**Метрики:**
+
+| Метрика | Тип | Описание |
+| :--- | :--- | :--- |
+| `ollama_requests_total{model, endpoint}` | Counter | Всего запросов к модели |
+| `ollama_generated_tokens_total{model}` | Counter | Сгенерировано токенов |
+| `ollama_prompt_tokens_total{model}` | Counter | Токенов промпта |
+| `ollama_tokens_per_second{model}` | Gauge | Скорость генерации (токенов/сек) |
+| `ollama_request_duration_seconds{model, endpoint}` | Histogram | Время ответа |
+| `ollama_errors_total{model}` | Counter | Ошибки при обращении к Ollama |
+
+Метка `model` разделяет метрики по `phi3` и `llama3.1` — видно нагрузку на каждую отдельно.
+
+**Безопасность экспортёра:**
+
+* **Не публикуется наружу:** в `docker-compose.yml` нет секции `ports`, доступ только внутри сети `monitoring`.
+* **Лимиты ресурсов:** `cpus: 0.5`, `memory: 256M`.
+* **Собственный Dockerfile:** минимальный набор зависимостей.
+* **Сканируется Trivy** в CI/CD наравне с другими образами.
+
+---
+
+## 📊 Observability: Prometheus + Grafana
+
+Prometheus собирает метрики с двух эндпоинтов (`gateway:8000/metrics` и `ollama-exporter:8000/metrics`), Grafana визуализирует их на двух дашбордах.
+
+### 🚦 Входной трафик и Rate Limiting
+
+* `gateway_requests_total` — общее количество запросов к `/chat`.
+* `gateway_rate_limited_total` — запросы, отклонённые лимитером (429).
+* `gateway_input_blocked_total` — атаки, заблокированные на входе.
+* `gateway_input_passed_total` — безопасные запросы, прошедшие входной фильтр.
+
+### 🛡️ Выходные Guardrails
+
+* `gateway_output_blocked_total` — общее количество скрытых ответов (PII, секреты, вердикты судьи).
+* `gateway_sensitive_blocked_total` — блокировки сканером `Sensitive`.
+* `gateway_red_flag_blocked_total` — блокировки по эвристике `RED_FLAG`.
+* `gateway_entropy_blocked_total` — блокировки по энтропийному анализу.
+* `gateway_judge_blocked_total` — вердикты LLM-судьи «небезопасно».
+
+### ⚡ Оптимизация ресурсов (FinOps)
+
+* `gateway_judge_skipped_total` — запросы, которые **не** отправлялись судье (экономия GPU).
+* `gateway_judge_passed_total` — ответы, которые судья проверила и одобрила.
+* `gateway_output_passed_total` — успешные ответы, дошедшие до пользователя.
+
+### 📈 Метрики производительности моделей (Ollama Exporter)
+
+* `ollama_requests_total{model}` — запросы к каждой модели.
+* `ollama_tokens_per_second{model}` — скорость генерации (`phi3` ~24 t/s, `llama3.1` ~10 t/s).
+* `ollama_generated_tokens_total{model}` — всего сгенерировано токенов.
+
+### Дашборды Grafana
+
+**1. Security Dashboard:**
+Эффективность каждого слоя защиты в реальном времени.
+
+![Grafana Security Dashboard](screenshots/17_grafana_security_dashboard.png)
+
+**2. Performance Dashboard:**
+Скорость и нагрузка на обе модели через кастомный Ollama Exporter.
+
+![Grafana Performance Dashboard](screenshots/18_grafana_performance_dashboard.png)
+
+> 🧪 **Подробный отчёт по нагрузочному и Chaos-тестированию API** (методология, алгоритмы скриптов, таблица результатов) — в файле [TEST_API_REPORT.md](TEST_API_REPORT.md).
+
+---
+
+## 🛡 DevSecOps Pipeline (GitHub Actions)
+
+При каждом коммите в `main` запускается пайплайн:
+
+* **Unit Tests:** проверка логики Guardrails (pytest).
+* **SAST:** статический анализ кода (Bandit).
+* **SCA:** аудит зависимостей (pip-audit) с паттерном **Risk Acceptance** для конфликтующих зависимостей `llm-guard`.
+* **Container Scan:** сборка Docker-образа и сканирование (Trivy).
+* **CodeQL:** глубокий статический анализ от GitHub.
+
+Пайплайн поймал реальную ошибку — **CWE-400** (отсутствие таймаутов в `requests`) — и заблокировал её до попадания в прод. Также нашёл 3 алерта CodeQL (`permissions` в workflow) и 39 CVE в транзитивных зависимостях `llm-guard`, которые были обработаны через Risk Acceptance с документированием в коде.
+
+**Текущий статус:**
+
+[![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
+
+---
 
 
-## 🚀 Roadmap to Production: От PoC к Enterprise-решению
+## 🚀 Roadmap to Production
 
-Текущий репозиторий представляет собой архитектурный **Proof of Concept (PoC)**, доказывающий работоспособность концепции многоуровневой защиты (Defense-in-Depth) для LLM. В коде `api.py` уже реализованы продвинутые механизмы: валидация Pydantic, адаптивный вызов LLM-судьи (только для «серой зоны»), детекторы на базе Presidio, эвристика RED_FLAG, энтропийный анализ, Fail-Closed логика и сбор бизнес-метрик через Prometheus.
-
-Однако я четко понимаю разницу между PoC и Production-ready продуктом. Ниже представлен план трансформации данного шлюза в отказоустойчивое, масштабируемое и соответствующее регуляторным требованиям решение.
-
-### ⚖️ Сравнение: Текущий PoC vs Production Target
+Текущий репозиторий — архитектурный **PoC**. В нём уже реализованы продвинутые механизмы: адаптивный LLM-судья, кастомный экспортёр метрик, Guardrails на всех слоях. Но между PoC и Production-ready продуктом есть разрыв.
 
 | Компонент | В текущем PoC | В Production (Target) |
 | :--- | :--- | :--- |
-| **Оркестрация** | `docker-compose` (локально) | Kubernetes (HPA, Ingress Controller) |
+| **Оркестрация** | `docker-compose` (локально) | Kubernetes (HPA, Ingress) |
 | **Rate Limiting** | In-memory `dict` в Python | Redis + API Gateway (Envoy/Nginx) |
-| **Управление секретами** | `.env` и переменные окружения | HashiCorp Vault / K8s Secrets |
+| **Управление секретами** | `.env` / переменные окружения | HashiCorp Vault / K8s Secrets |
 | **Сетевая безопасность** | Docker bridge network | K8s Network Policies + mTLS |
-| **LLM-судья** | Адаптивный (только при risk > 0.5) | Conditional (по триггерам + асинхронно) |
-| **Аутентификация** | Отсутствует (открытый API) | JWT / API-ключи на входе |
-| **Логирование** | Stdout + Prometheus metrics | Экспорт в SIEM (JSON/CEF) + алерты |
-
-### 🗺 Визуальная дорожная карта
+| **LLM-судья** | Адаптивный (при risk > 0.5) | Conditional + асинхронный вызов |
+| **Аутентификация** | Отсутствует (открытый API) | JWT / API-ключи |
+| **Логирование** | Stdout + Prometheus metrics | Экспорт в SIEM (JSON/CEF) + Alertmanager |
 
 ```mermaid
 graph LR
-    A["🧪 Текущий PoC<br/>FastAPI + In-Memory Limits"] --> B["⚙️ Этап 1: HA<br/>K8s + Redis Rate Limiting"]
-    B --> C["⚡ Этап 2: Perf<br/>Async I/O + Optimization"]
-    C --> D["🔒 Этап 3: SecOps<br/>Vault + mTLS + JWT"]
-    D --> E["🛡️ Этап 4: Compliance<br/>SIEM + Air-Gapped + ФСТЭК"]
-
+    A["🧪 PoC<br/>FastAPI + In-Memory"] --> B["⚙️ HA<br/>K8s + Redis"]
+    B --> C["⚡ Perf<br/>Async I/O"]
+    C --> D["🔒 SecOps<br/>Vault + mTLS + JWT"]
+    D --> E["🛡️ Compliance<br/>SIEM + Air-Gapped + ФСТЭК"]
     style A fill:#fff3cd,stroke:#ffc107,stroke-width:2px
     style B fill:#e1f5fe,stroke:#0288d1,stroke-width:1px
     style C fill:#e1f5fe,stroke:#0288d1,stroke-width:1px
@@ -602,25 +562,31 @@ graph LR
     style E fill:#d4edda,stroke:#28a745,stroke-width:2px
 ```
 
-### 📌 Детализация этапов
+**Этапы:**
 
-**⚙️ Этап 1: Масштабируемость и отказоустойчивость (High Availability)**
-*   **Оркестрация:** Переход с `docker-compose` на Kubernetes (K8s). Запуск шлюза как Deployment с горизонтальным масштабированием (HPA) на основе метрик CPU и `gateway_requests_total`.
-*   **Распределенный Rate Limiting:** Замена текущего in-memory счетчика в Python на Redis. Это гарантирует корректную работу лимитов across всех реплик пода, предотвращая обход защиты при балансировке нагрузки.
-*   **Балансировка:** Настройка Ingress Controller (Nginx/Traefik) с терминацией TLS.
+1. **HA & Scalability:** Kubernetes (Deployment + HPA), Redis для распределённого Rate Limiting, Ingress Controller с TLS.
+2. **FinOps & Performance:** асинхронный вызов судьи (`httpx`/`aiohttp`), кэширование вердиктов, оптимизация порогов.
+3. **SecOps:** HashiCorp Vault для секретов, mTLS и Network Policies, JWT/API-ключи на `/chat`.
+4. **Compliance:** экспорт структурированных логов в SIEM (MaxPatrol, Splunk, ELK), Prometheus Alertmanager, Air-gapped установка с готовностью к проверкам ФСТЭК (152-ФЗ, 187-ФЗ).
 
-**⚡ Этап 2: Оптимизация производительности и затрат (FinOps)**
-*   **Оптимизация LLM-судьи:** В текущем `api.py` уже реализован адаптивный вызов судьи (только при `input_risk_score > 0.5`), что экономит ресурсы GPU. Следующий шаг — сделать фильтр ещё строже: если `Sensitive` выдаёт низкий риск и нет триггерных слов, ответ пропускается без судьи.
-*   **Асинхронность:** Замена синхронных `requests.post` в `api.py` на асинхронный `httpx` или `aiohttp` для неблокирующего выполнения I/O операций при высоких нагрузках.
+---
 
-**🔒 Этап 3: Корпоративная безопасность (SecOps)**
-*   **Управление секретами:** Интеграция с HashiCorp Vault или K8s Secrets. Шлюз не должен хранить конфигурации или ключи в переменных окружения в открытом виде.
-*   **Сетевая изоляция:** Применение Kubernetes Network Policies и mTLS, чтобы контейнер шлюза мог обращаться только к порту 11434 пода Ollama и ни к чему другому (принцип наименьших привилегий на уровне сети).
-*   **Аутентификация:** Внедрение проверки JWT-токенов или API-ключей на входе в `/chat` для авторизации клиентских приложений.
+## ⚡ Быстрый запуск
 
-**🛡️ Этап 4: Наблюдаемость и Комплаенс (Observability & Compliance)**
-*   **Интеграция с SIEM:** У нас уже есть сбор метрик в Prometheus и дашборды Grafana. Следующий шаг — настройка экспорта структурированных логов (в формате CEF или JSON) о заблокированных атаках (`INPUT_BLOCKED`, `JUDGE_BLOCKED`) в корпоративный SIEM (MaxPatrol SIEM, ELK Stack, Splunk).
-*   **Проактивный алертинг:** Настройка Prometheus Alertmanager: если количество заблокированных Prompt Injection атак превышает порог (например, 50 в минуту), система автоматически создает инцидент (признак DDoS или целенаправленной атаки).
-*   **Air-Gapped режим:** Гарантия возможности установки всего стека (включая веса моделей Ollama, DeBERTa и Presidio) на сервер без доступа в интернет, с готовностью к прохождению проверок ФСТЭК (152-ФЗ, 187-ФЗ о КИИ).
+Проект разворачивается одной командой (нужен Docker Desktop с WSL 2):
 
-> 💡 **Моя цель: пройти путь от исследователя и пентестера (Red Teaming, поиск векторов атак) до инженера и архитектора (написание защитного шлюза, проектирование Defense-in-Depth).** Задача — не просто найти уязвимость, а выстроить процесс, который делает внедрение ИИ безопасным и соответствующим бизнес-требованиям компаний.
+```bash
+docker compose up -d --build
+```
+
+После старта доступны:
+
+* **Swagger UI (API):** `http://localhost:8000/docs`
+* **Prometheus (метрики):** `http://localhost:9090`
+* **Grafana (дашборды):** `http://localhost:3000` (admin / admin)
+
+> 💡 **Про Codespaces:** проект можно запустить и в GitHub Codespaces — в репозитории есть `.devcontainer` с Python 3.12. Публичная ссылка вида `https://<codespace>-8000.app.github.dev/docs` работает **только пока Codespace запущен** — при простое GitHub его останавливает. Для постоянной демонстрации нужен отдельный хостинг (Render/Railway), это в Roadmap.
+
+---
+
+> 💡 **Моя роль в этом проекте:** исследователь, пентестер, инженер и архитектор в одном лице. Моя цель — не просто найти уязвимость в промпте, а выстроить сквозной процесс, который делает внедрение ИИ безопасным, предсказуемым, экономически эффективным и соответствующим бизнес-требованиям компании.
