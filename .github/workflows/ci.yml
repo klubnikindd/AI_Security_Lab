@@ -38,12 +38,19 @@ jobs:
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
         # 🔒 ЗАЩИТА: Убран continue-on-error. Теперь проверка блокирует сборку при появлении НОВЫХ уязвимостей.
-        # Флаг --no-deps отключает попытку pip-audit обновить пакеты (предотвращает ошибку ResolutionImpossible).
-        # Флаг --ignore-vuln-file ссылается на реестр принятых рисков (см. RISK_ACCEPTANCE.md и .pip-audit-ignore).
+        # Флаг --no-deps предотвращает ошибку ResolutionImpossible.
+        # Скрипт читает .pip-audit-ignore и формирует флаги --ignore-vuln для каждого ID.
         run: |
-          pip-audit -r requirements.txt \
-            --no-deps \
-            --ignore-vuln-file .pip-audit-ignore
+          IGNORE_ARGS=""
+          while read -r line; do
+            # Пропускаем пустые строки и комментарии
+            if [[ -n "$line" && ! "$line" =~ ^# ]]; then
+              IGNORE_ARGS="$IGNORE_ARGS --ignore-vuln $line"
+            fi
+          done < .pip-audit-ignore
+          
+          # Запускаем pip-audit с сгенерированными аргументами
+          pip-audit -r requirements.txt --no-deps $IGNORE_ARGS
 
   container-scan:
     name: Container Security Scan (Trivy)
