@@ -37,8 +37,13 @@ jobs:
         run: bandit -r . -x ./.venv*,./test_*.py -f screen
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
-        continue-on-error: true
-        run: pip-audit -r requirements.txt
+        # 🔒 ЗАЩИТА: Убран continue-on-error. Теперь проверка блокирует сборку при появлении НОВЫХ уязвимостей.
+        # Флаг --no-deps отключает попытку pip-audit обновить пакеты (предотвращает ошибку ResolutionImpossible).
+        # Флаг --ignore-vuln-file ссылается на реестр принятых рисков (см. RISK_ACCEPTANCE.md и .pip-audit-ignore).
+        run: |
+          pip-audit -r requirements.txt \
+            --no-deps \
+            --ignore-vuln-file .pip-audit-ignore
 
   container-scan:
     name: Container Security Scan (Trivy)
@@ -57,7 +62,7 @@ jobs:
         with:
           image-ref: 'ai-security-lab:latest'
           format: 'table'
-          exit-code: '0'
+          exit-code: '1' # 🔒 ЗАЩИТА: Trivy роняет пайплайн при обнаружении CRITICAL/HIGH угроз
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'

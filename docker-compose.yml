@@ -1,9 +1,9 @@
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.3.12 # 🔒 Зафиксирована версия
     container_name: ollama_server
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434" # 🔒 Только localhost
     volumes:
       - ollama_data:/root/.ollama
     networks:
@@ -14,11 +14,11 @@ services:
     container_name: secure_gateway
     environment:
       - OLLAMA_HOST=http://ollama-exporter:8000
-      - HF_HOME=/app/.cache/huggingface # Явно указываем путь к кэшу
+      - HF_HOME=/app/.cache/huggingface 
     volumes:
-      - ./hf_cache:/app/.cache/huggingface # Монтируем папку с хоста
+      - ./hf_cache:/app/.cache/huggingface 
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000" # 🔒 Только localhost
     depends_on:
       - ollama
     networks:
@@ -35,6 +35,7 @@ services:
       - monitoring
     depends_on:
       - ollama
+    # Порт наружу не публикуется (по умолчанию), доступен только внутри сети monitoring
     deploy:
       resources:
         limits:
@@ -45,10 +46,10 @@ services:
           memory: 64M
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.53.0 # 🔒 Зафиксирована версия
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090" # 🔒 Только localhost
     volumes:
       - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
@@ -58,14 +59,16 @@ services:
     networks:
       - monitoring
 
-  grafana:
-    image: grafana/grafana:latest
+   grafana:
+    image: grafana/grafana:11.1.0 # 🔒 Зафиксирована версия
     container_name: grafana
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000" # 🔒 Только localhost
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      # 🔒 Если .env есть — берет пароль оттуда. Если нет — запускается с 'admin'.
+      # Это позволяет проекту работать "из коробки", не храня реальные секреты в Git.
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources

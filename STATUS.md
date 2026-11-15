@@ -23,13 +23,23 @@
 ## 🔴 P0 — Критические (обязательно исправить до реального использования)
 
 - [x] **Path Traversal в MCP-сканере** (`secure_file_scanner.py`)
-  - *Исправлено в коммите* `abc1234` — добавлены `resolve()` + `is_relative_to(ALLOWED_ROOT)` + обработка symlink.
-  - *Тест:* `tests/test_path_traversal.py`
+  - *Исправлено:* Добавлены `resolve()` + `is_relative_to(SAFE_WORKSPACE_DIR)` и обработка symlink.
+  - *Тест:* Внедрена проверка выхода за пределы рабочей директории.
+- [x] **Fail-open в MCP Scanner** (`secure_file_scanner.py`)
+  - *Исправлено:* Если библиотека `llm-guard` не установлена, сканер блокирует чтение файлов (Fail-Closed).
+- [x] **Небезопасная конфигурация Docker** (`docker-compose.yml`)
+  - *Исправлено:* Порты привязаны к `127.0.0.1`, убран тег `latest`, пароль Grafana вынесен в переменную окружения.
+- [x] **Уязвимость URL Allowlist в MCP** (`secure_file_scanner.py`)
+  - *Исправлено:* Внедрен строгий парсинг через `urlparse` (защита от `github.com.evil.example`).
 - [x] **Fail-open в Presidio** (`api.py:check_pii_semantic`)
-  - *Исправлено в коммите* `def5678` — введены статусы `PASS/BLOCK/ERROR`, для критичных слоёв применён fail-closed.
+  - *Исправлено:* Введены статусы `PASS/BLOCK/ERROR`, для критичных слоёв применён fail-closed.
   - *Метрика:* `gateway_degraded_total`
 - [ ] **Уязвимость LLM-судьи к инъекциям** (`api.py:JUDGE_PROMPT_TEMPLATE`)
   - *В процессе:* добавляются строгие разделители (`<prompt>…</prompt>`) и тест-кейс с judge-directed payload.
+- [ ] **Небезопасные тестовые данные** (`secret_passwords.txt`)
+  - *В процессе:* файл будет переименован в `synthetic_secrets_DO_NOT_USE.txt` с явным предупреждением.
+- [ ] **Отсутствие блокирующих проверок в CI/CD** (`.github/workflows/ci.yml`)
+  - *В процессе:* Trivy и pip-audit будут переведены в режим блокировки сборки (`exit-code: 1`, отключение `continue-on-error`).
 
 ## 🟡 P1 — Важные (запланированы, не блокируют PoC)
 
@@ -41,6 +51,8 @@
   - *Решение:* полноценный парсинг URL и строгое совпадение hostname.
 - [ ] **Нет замера ASR после внедрения защиты**
   - *Решение:* прогон Garak через REST-эндпоинт `/chat` (в процессе).
+- [ ] **Защита от Fallback-атак** — агент должен останавливаться при сбое MCP-инструмента, а не искать нативные пути (Python/Bash).
+- [ ] **Аудит конфигурации (GitOps)** — логирование хеша (Commit Hash) YAML-файла политик безопасности при каждом запуске.
 
 ## ⚪ P2 — Принято к сведению, пока не планируется
 

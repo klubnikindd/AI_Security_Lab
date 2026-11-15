@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 hf_cache/
 *.log
+.env
