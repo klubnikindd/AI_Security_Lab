@@ -236,8 +236,9 @@ async def health():
         async with httpx.AsyncClient(timeout=3.0) as client:
             r = await client.get(f"{OLLAMA_HOST}/api/tags")
             ollama_ok = r.status_code == 200
-    except Exception:
-        pass
+    except Exception as e:
+        # 🔒 ИСПРАВЛЕНО (Bandit B110): Заменяем pass на логирование
+        log.debug(f"[health] Ollama is unreachable: {e}")
     return {"status": "ok" if ollama_ok else "degraded", "ollama_reachable": ollama_ok}
 
 @app.get("/metrics")
