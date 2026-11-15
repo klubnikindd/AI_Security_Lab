@@ -59,16 +59,16 @@ services:
     networks:
       - monitoring
 
-   grafana:
+  grafana: # 🔒 ИСПРАВЛЕНО: Теперь ровно 2 пробела в начале!
     image: grafana/grafana:11.1.0 # 🔒 Зафиксирована версия
     container_name: grafana
     ports:
       - "127.0.0.1:3000:3000" # 🔒 Только localhost
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      # 🔒 Если .env есть — берет пароль оттуда. Если нет — запускается с 'admin'.
-      # Это позволяет проекту работать "из коробки", не храня реальные секреты в Git.
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      # 🔒 ИСПРАВЛЕНО: Строгий Fail-Closed (без :-admin). 
+      # Если .env нет или пароль не задан, контейнер упадет с ошибкой.
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Ошибка: Вы должны задать GRAFANA_ADMIN_PASSWORD в .env}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources

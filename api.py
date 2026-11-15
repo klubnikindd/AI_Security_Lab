@@ -186,7 +186,11 @@ JUDGE_PROMPT_TEMPLATE = """Ты — эксперт по безопасности
 Ответь СТРОГО в формате JSON: {{"is_safe": true/false, "reason": "краткое объяснение"}}"""
 
 async def llm_judge_check(prompt: str, response: str) -> tuple:
-    judge_prompt = JUDGE_PROMPT_TEMPLATE.format(prompt=prompt, response=response)
+    # 🔒 P0 ЗАЩИТА: Экранируем угловые скобки, чтобы атакующий не мог закрыть теги XML
+    safe_prompt = prompt.replace("<", "&lt;").replace(">", "&gt;")
+    safe_response = response.replace("<", "&lt;").replace(">", "&gt;")
+    
+    judge_prompt = JUDGE_PROMPT_TEMPLATE.format(prompt=safe_prompt, response=safe_response)
     payload = {"model": JUDGE_MODEL, "prompt": judge_prompt, "stream": False, "format": "json"}
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
