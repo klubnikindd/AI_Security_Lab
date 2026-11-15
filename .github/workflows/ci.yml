@@ -37,19 +37,21 @@ jobs:
         run: bandit -r . -x ./.venv*,./test_*.py -f screen
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
-        # 🔒 ЗАЩИТА: Убран continue-on-error. Теперь проверка блокирует сборку при появлении НОВЫХ уязвимостей.
-        # Флаг --no-deps предотвращает ошибку ResolutionImpossible.
-        # Скрипт читает .pip-audit-ignore и формирует флаги --ignore-vuln для каждого ID.
+        # 🔒 ЗАЩИТА: Убран continue-on-error. Блокирует сборку при НОВЫХ уязвимостях.
+        # Скрипт читает .pip-audit-ignore, удаляет \r (Windows line endings), 
+        # пропускает пустые строки и комментарии, и формирует флаги --ignore-vuln.
         run: |
           IGNORE_ARGS=""
           while read -r line; do
+            # Удаляем возврат каретки (Windows CRLF) и пробелы по краям
+            line=$(echo "$line" | tr -d '\r' | xargs)
+            
             # Пропускаем пустые строки и комментарии
-            if [[ -n "$line" && ! "$line" =~ ^# ]]; then
+            if [[ -n "$line" && "$line" != \#* ]]; then
               IGNORE_ARGS="$IGNORE_ARGS --ignore-vuln $line"
             fi
           done < .pip-audit-ignore
           
-          # Запускаем pip-audit с сгенерированными аргументами
           pip-audit -r requirements.txt --no-deps $IGNORE_ARGS
 
   container-scan:
