@@ -2,6 +2,10 @@
 
 [![DevSecOps Security Pipeline](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/klubnikindd/AI_Security_Lab/actions/workflows/ci.yml)
 
+> 📊 **Честный статус проекта:** PoC, не production-ready. Известные ограничения, план устранения и out-of-scope — в [STATUS.md](STATUS.md). Рекрутерам рекомендуется начинать с этого файла.
+[![Project Status](https://img.shields.io/badge/status-PoC%20%C2%B7%20active-yellow)](STATUS.md)
+[![Known Issues](https://img.shields.io/badge/known%20issues-7%20(3%20P0)-orange)](STATUS.md)
+
 ## 📑 Оглавление
 - [LLM Security Assessment: Prompt Injection Testing \& Defense-in-Depth](#llm-security-assessment-prompt-injection-testing--defense-in-depth)
   - [📑 Оглавление](#-оглавление)
