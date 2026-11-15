@@ -37,20 +37,15 @@ jobs:
         run: bandit -r . -x ./.venv*,./test_*.py -f screen
 
       - name: 6. Dependency Audit - Проверка библиотек (pip-audit)
-        # 🔒 ЗАЩИТА: Убран continue-on-error. Блокирует сборку при НОВЫХ уязвимостях.
-        # Скрипт читает .pip-audit-ignore, удаляет \r (Windows line endings), 
-        # пропускает пустые строки и комментарии, и формирует флаги --ignore-vuln.
+        # 🔒 ЗАЩИТА: Блокирует сборку при НОВЫХ уязвимостях.
+        # Скрипт читает .pip-audit-ignore, убирает комментарии, пустые строки и \r,
+        # и формирует строку с флагами --ignore-vuln для каждой уязвимости.
         run: |
-          IGNORE_ARGS=""
-          while read -r line; do
-            # Удаляем возврат каретки (Windows CRLF) и пробелы по краям
-            line=$(echo "$line" | tr -d '\r' | xargs)
-            
-            # Пропускаем пустые строки и комментарии
-            if [[ -n "$line" && "$line" != \#* ]]; then
-              IGNORE_ARGS="$IGNORE_ARGS --ignore-vuln $line"
-            fi
-          done < .pip-audit-ignore
+          IGNORE_ARGS=$(grep -v '^#' .pip-audit-ignore | grep -v '^$' | tr -d '\r' | sed 's/^/--ignore-vuln /' | tr '\n' ' ')
+          
+          echo "=== Сгенерированные аргументы игнорирования ==="
+          echo "$IGNORE_ARGS"
+          echo "=============================================="
           
           pip-audit -r requirements.txt --no-deps $IGNORE_ARGS
 
