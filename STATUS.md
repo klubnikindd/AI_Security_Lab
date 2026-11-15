@@ -34,12 +34,13 @@
 - [x] **Fail-open в Presidio** (`api.py:check_pii_semantic`)
   - *Исправлено:* Введены статусы `PASS/BLOCK/ERROR`, для критичных слоёв применён fail-closed.
   - *Метрика:* `gateway_degraded_total`
-- [ ] **Уязвимость LLM-судьи к инъекциям** (`api.py:JUDGE_PROMPT_TEMPLATE`)
-  - *В процессе:* добавляются строгие разделители (`<prompt>…</prompt>`) и тест-кейс с judge-directed payload.
-- [ ] **Небезопасные тестовые данные** (`secret_passwords.txt`)
-  - *В процессе:* файл будет переименован в `synthetic_secrets_DO_NOT_USE.txt` с явным предупреждением.
-- [ ] **Отсутствие блокирующих проверок в CI/CD** (`.github/workflows/ci.yml`)
-  - *В процессе:* Trivy и pip-audit будут переведены в режим блокировки сборки (`exit-code: 1`, отключение `continue-on-error`).
+- [x] **Уязвимость LLM-судьи к инъекциям** (`api.py:JUDGE_PROMPT_TEMPLATE`)
+  - *Исправлено:* добавляются строгие разделители (`<prompt>…</prompt>`) и тест-кейс с judge-directed payload.
+  - *Тест:* Добавлен `test_llm_judge_resists_injection` в `test_security.py`.
+- [x] **Небезопасные тестовые данные** (`secret_passwords.txt`)
+  - *Исправлено:* файл будет переименован в `synthetic_secrets_DO_NOT_USE.txt` с явным предупреждением.
+- [x] **Отсутствие блокирующих проверок в CI/CD** (`.github/workflows/ci.yml`)
+  - *Исправлено:* Trivy и pip-audit будут переведены в режим блокировки сборки (`exit-code: 1`, отключение `continue-on-error`).
 
 ## 🟡 P1 — Важные (запланированы, не блокируют PoC)
 
